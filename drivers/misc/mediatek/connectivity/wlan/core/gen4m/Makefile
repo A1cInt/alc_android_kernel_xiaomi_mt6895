@@ -738,6 +738,7 @@ NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
 			$(NIC_DIR)nic_rxd_v2.o
 endif
 CHIPS_OBJS += $(CHIPS_CMM)fw_dl.o
+CFLAGS_fw_dl.o += $(call cc-disable-warning,pragma-messages)
 
 ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt6632/mt6632.o
