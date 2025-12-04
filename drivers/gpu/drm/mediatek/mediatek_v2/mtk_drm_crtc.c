@@ -9379,7 +9379,7 @@ void mtk_gce_backup_slot_backup(struct mtk_drm_crtc *mtk_crtc)
 	size_t size;
 	struct dummy_mapping *table;
 	unsigned int mmsys_id = 0, reg_val;
-	unsigned int *dummy_backup;
+	unsigned int *dummy_backup = NULL;
 	int i;
 
 	mmsys_id = mtk_get_mmsys_id(crtc);
