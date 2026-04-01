@@ -1,4 +1,4 @@
- /*
+/*
   * Goodix Touchscreen Driver
   * Copyright (C) 2020 - 2021 Goodix, Inc.
   *
@@ -23,18 +23,19 @@
 #include <linux/of_gpio.h>
 #include <linux/err.h>
 #include "goodix_ts_core.h"
-#define TS_DRIVER_NAME		"gtx8_spi"
+#define TS_DRIVER_NAME "gtx8_spi"
 
-#define SPI_TRANS_PREFIX_LEN    1
-#define REGISTER_WIDTH          4
-#define SPI_READ_DUMMY_LEN      4
-#define SPI_READ_PREFIX_LEN  (SPI_TRANS_PREFIX_LEN + REGISTER_WIDTH + SPI_READ_DUMMY_LEN)
+#define SPI_TRANS_PREFIX_LEN 1
+#define REGISTER_WIDTH 4
+#define SPI_READ_DUMMY_LEN 4
+#define SPI_READ_PREFIX_LEN                                                    \
+	(SPI_TRANS_PREFIX_LEN + REGISTER_WIDTH + SPI_READ_DUMMY_LEN)
 #define SPI_WRITE_PREFIX_LEN (SPI_TRANS_PREFIX_LEN + REGISTER_WIDTH)
 #define SPI_PREALLOC_RX_BUF_SIZE 4096 + SPI_READ_PREFIX_LEN
 #define SPI_PREALLOC_TX_BUF_SIZE 4096 + SPI_WRITE_PREFIX_LEN
 
-#define SPI_WRITE_FLAG  0xF0
-#define SPI_READ_FLAG   0xF1
+#define SPI_WRITE_FLAG 0xF0
+#define SPI_READ_FLAG 0xF1
 
 static struct platform_device *goodix_pdev;
 struct goodix_bus_interface goodix_spi_bus;
@@ -62,7 +63,7 @@ bool display_name_status = false;
  * return: 0 - read ok, < 0 - spi transter error
  */
 static int goodix_spi_read_bra(struct device *dev, unsigned int addr,
-	unsigned char *data, unsigned int len)
+			       unsigned char *data, unsigned int len)
 {
 	struct spi_device *spi = to_spi_device(dev);
 	u8 *rx_buf = NULL;
@@ -75,7 +76,7 @@ static int goodix_spi_read_bra(struct device *dev, unsigned int addr,
 	mutex_lock(&goodix_spi_bus.mutex);
 
 	if (buf_len <= SPI_PREALLOC_RX_BUF_SIZE &&
-		buf_len <= SPI_PREALLOC_TX_BUF_SIZE) {
+	    buf_len <= SPI_PREALLOC_TX_BUF_SIZE) {
 		rx_buf = goodix_spi_bus.rx_buf;
 		tx_buf = goodix_spi_bus.tx_buf;
 		memset(tx_buf, 0, buf_len);
@@ -133,7 +134,7 @@ err_alloc_rx_buf:
 }
 
 static int goodix_spi_read(struct device *dev, unsigned int addr,
-	unsigned char *data, unsigned int len)
+			   unsigned char *data, unsigned int len)
 {
 	struct spi_device *spi = to_spi_device(dev);
 	u8 *rx_buf = NULL;
@@ -146,7 +147,7 @@ static int goodix_spi_read(struct device *dev, unsigned int addr,
 	mutex_lock(&goodix_spi_bus.mutex);
 
 	if (buf_len <= SPI_PREALLOC_RX_BUF_SIZE &&
-		buf_len <= SPI_PREALLOC_TX_BUF_SIZE) {
+	    buf_len <= SPI_PREALLOC_TX_BUF_SIZE) {
 		rx_buf = goodix_spi_bus.rx_buf;
 		tx_buf = goodix_spi_bus.tx_buf;
 		memset(tx_buf, 0, buf_len);
@@ -211,7 +212,7 @@ err_alloc_rx_buf:
  * return: 0 - write ok; < 0 - spi transter error.
  */
 static int goodix_spi_write(struct device *dev, unsigned int addr,
-		unsigned char *data, unsigned int len)
+			    unsigned char *data, unsigned int len)
 {
 	struct spi_device *spi = to_spi_device(dev);
 	u8 *tx_buf = NULL;
@@ -250,7 +251,7 @@ static int goodix_spi_write(struct device *dev, unsigned int addr,
 	mutex_unlock(&goodix_spi_bus.mutex);
 
 	if (ret < 0)
-		ts_err("spi transfer error:%d",ret);
+		ts_err("spi transfer error:%d", ret);
 
 	if (tx_buf != goodix_spi_bus.tx_buf)
 		kfree(tx_buf);
@@ -293,8 +294,8 @@ static int goodix_spi_probe(struct spi_device *spi)
 	ts_info("goodix spi probe in");
 
 	/* init spi_device */
-	spi->mode            = SPI_MODE_0;
-	spi->bits_per_word   = 8;
+	spi->mode = SPI_MODE_0;
+	spi->bits_per_word = 8;
 	spi->rt = true;
 	ret = spi_setup(spi);
 	if (ret) {
@@ -382,17 +383,19 @@ static int goodix_spi_remove(struct spi_device *spi)
 
 #ifdef CONFIG_OF
 static const struct of_device_id spi_matchs[] = {
-//	{.compatible = "goodix,gt9897S",},
-//	{.compatible = "goodix,gt9897T",},
-//	{.compatible = "goodix,gt9966S",},
-//	{.compatible = "goodix,gt9916S",},
-	{.compatible = "xiaomi,touch-spi",},
+	//	{.compatible = "goodix,gt9897S",},
+	//	{.compatible = "goodix,gt9897T",},
+	//	{.compatible = "goodix,gt9966S",},
+	//	{.compatible = "goodix,gt9916S",},
+	{
+		.compatible = "xiaomi,touch-spi",
+	},
 	{},
 };
 #endif
 
 static const struct spi_device_id spi_id_table[] = {
-	{TS_DRIVER_NAME, 0},
+	{ TS_DRIVER_NAME, 0 },
 	{},
 };
 

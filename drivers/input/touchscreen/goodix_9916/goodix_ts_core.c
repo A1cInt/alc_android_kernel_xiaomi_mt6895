@@ -1,4 +1,4 @@
- /*
+/*
   * Goodix Touchscreen Driver
   * Copyright (C) 2020 - 2021 Goodix, Inc.
   *
@@ -50,15 +50,15 @@
 
 #include "goodix_ts_core.h"
 
-#define GOODIX_DEFAULT_CFG_NAME 	"goodix_cfg_group.cfg"
-#define GOOIDX_INPUT_PHYS			"goodix_ts/input0"
-#define PINCTRL_STATE_ACTIVE		"pmx_ts_active"
-#define PINCTRL_STATE_SUSPEND		"pmx_ts_suspend"
-#define PINCTRL_STATE_BOOT			"pmx_ts_boot"
-#define PINCTRL_STATE_SPIMODE		"pmx_gt_spi_mode"
+#define GOODIX_DEFAULT_CFG_NAME "goodix_cfg_group.cfg"
+#define GOOIDX_INPUT_PHYS "goodix_ts/input0"
+#define PINCTRL_STATE_ACTIVE "pmx_ts_active"
+#define PINCTRL_STATE_SUSPEND "pmx_ts_suspend"
+#define PINCTRL_STATE_BOOT "pmx_ts_boot"
+#define PINCTRL_STATE_SPIMODE "pmx_gt_spi_mode"
 
 /* use display oled id gpio to compatible different panel/touch ic */
-#define L12A_ID_DET (265+191)
+#define L12A_ID_DET (265 + 191)
 
 #ifdef CONFIG_TOUCH_BOOST
 extern void touch_irq_boost(void);
@@ -82,13 +82,14 @@ static void test_for_irq(void)
 	static s64 last;
 	static s64 now;
 	static struct irqaction action = {
-		.name = "rate_test",};
+		.name = "rate_test",
+	};
 
 	now = ktime_to_us(ktime_get());
-	if (now - last > 4500 && now-last < 100000) {
+	if (now - last > 4500 && now - last < 100000) {
 		trace_irq_handler_entry(999, &action);
-		trace_irq_handler_exit(999, &action,1);
-		ts_info("event time to long %d", now-last);
+		trace_irq_handler_exit(999, &action, 1);
+		ts_info("event time to long %d", now - last);
 	}
 	last = now;
 }
@@ -100,13 +101,13 @@ static void gtp_qos_work_func(struct work_struct *work)
 
 	cd = container_of(work, struct goodix_ts_core, qos_work.work);
 
-	cpu_latency_qos_update_request(&cd->gtp_qos_request, PM_QOS_DEFAULT_VALUE);
+	cpu_latency_qos_update_request(&cd->gtp_qos_request,
+				       PM_QOS_DEFAULT_VALUE);
 }
 
 static void gtp_qos_init(struct goodix_ts_core *cd)
 {
-
-	INIT_DELAYED_WORK(&cd->qos_work,  gtp_qos_work_func);
+	INIT_DELAYED_WORK(&cd->qos_work, gtp_qos_work_func);
 	cpu_latency_qos_add_request(&cd->gtp_qos_request, PM_QOS_DEFAULT_VALUE);
 }
 
@@ -116,7 +117,6 @@ static void gtp_qos_request(struct goodix_ts_core *cd)
 	cpu_latency_qos_update_request(&cd->gtp_qos_request, 0);
 	schedule_delayed_work(&cd->qos_work, msecs_to_jiffies(1000));
 }
-
 
 /**
  * __do_register_ext_module - register external module
@@ -130,15 +130,14 @@ static int __do_register_ext_module(struct goodix_ext_module *module)
 
 	/* prority level *must* be set */
 	if (module->priority == EXTMOD_PRIO_RESERVED) {
-		ts_err("Priority of module [%s] needs to be set",
-		       module->name);
+		ts_err("Priority of module [%s] needs to be set", module->name);
 		return -EINVAL;
 	}
 	mutex_lock(&goodix_modules.mutex);
 	/* find insert point for the specified priority */
 	if (!list_empty(&goodix_modules.head)) {
-		list_for_each_entry_safe(ext_module, next,
-					 &goodix_modules.head, list) {
+		list_for_each_entry_safe (ext_module, next,
+					  &goodix_modules.head, list) {
 			if (ext_module == module) {
 				ts_info("Module [%s] already exists",
 					module->name);
@@ -148,8 +147,8 @@ static int __do_register_ext_module(struct goodix_ext_module *module)
 		}
 
 		/* smaller priority value with higher priority level */
-		list_for_each_entry_safe(ext_module, next,
-					 &goodix_modules.head, list) {
+		list_for_each_entry_safe (ext_module, next,
+					  &goodix_modules.head, list) {
 			if (ext_module->priority >= module->priority) {
 				insert_point = &ext_module->list;
 				break;
@@ -158,8 +157,7 @@ static int __do_register_ext_module(struct goodix_ext_module *module)
 	}
 
 	if (module->funcs && module->funcs->init) {
-		if (module->funcs->init(goodix_modules.core_data,
-					module) < 0) {
+		if (module->funcs->init(goodix_modules.core_data, module) < 0) {
 			ts_err("Module [%s] init error",
 			       module->name ? module->name : " ");
 			mutex_unlock(&goodix_modules.mutex);
@@ -175,9 +173,10 @@ static int __do_register_ext_module(struct goodix_ext_module *module)
 	return 0;
 }
 
-static void goodix_register_ext_module_work(struct work_struct *work) {
+static void goodix_register_ext_module_work(struct work_struct *work)
+{
 	struct goodix_ext_module *module =
-			container_of(work, struct goodix_ext_module, work);
+		container_of(work, struct goodix_ext_module, work);
 
 	ts_info("module register work IN");
 
@@ -267,8 +266,8 @@ int goodix_unregister_ext_module(struct goodix_ext_module *module)
 
 	mutex_lock(&goodix_modules.mutex);
 	if (!list_empty(&goodix_modules.head)) {
-		list_for_each_entry_safe(ext_module, next,
-					 &goodix_modules.head, list) {
+		list_for_each_entry_safe (ext_module, next,
+					  &goodix_modules.head, list) {
 			if (ext_module == module) {
 				found = true;
 				break;
@@ -280,8 +279,7 @@ int goodix_unregister_ext_module(struct goodix_ext_module *module)
 	}
 
 	if (!found) {
-		ts_debug("Module [%s] never registed",
-				module->name);
+		ts_debug("Module [%s] never registed", module->name);
 		mutex_unlock(&goodix_modules.mutex);
 		return 0;
 	}
@@ -292,8 +290,7 @@ int goodix_unregister_ext_module(struct goodix_ext_module *module)
 	if (module->funcs && module->funcs->exit)
 		module->funcs->exit(goodix_modules.core_data, module);
 
-	ts_info("Moudle [%s] unregistered",
-		module->name ? module->name : " ");
+	ts_info("Moudle [%s] unregistered", module->name ? module->name : " ");
 	return 0;
 }
 
@@ -302,13 +299,11 @@ static void goodix_ext_sysfs_release(struct kobject *kobj)
 	ts_info("Kobject released!");
 }
 
-#define to_ext_module(kobj)	container_of(kobj,\
-				struct goodix_ext_module, kobj)
-#define to_ext_attr(attr)	container_of(attr,\
-				struct goodix_ext_attribute, attr)
+#define to_ext_module(kobj) container_of(kobj, struct goodix_ext_module, kobj)
+#define to_ext_attr(attr) container_of(attr, struct goodix_ext_attribute, attr)
 
 static ssize_t goodix_ext_sysfs_show(struct kobject *kobj,
-		struct attribute *attr, char *buf)
+				     struct attribute *attr, char *buf)
 {
 	struct goodix_ext_module *module = to_ext_module(kobj);
 	struct goodix_ext_attribute *ext_attr = to_ext_attr(attr);
@@ -320,7 +315,8 @@ static ssize_t goodix_ext_sysfs_show(struct kobject *kobj,
 }
 
 static ssize_t goodix_ext_sysfs_store(struct kobject *kobj,
-		struct attribute *attr, const char *buf, size_t count)
+				      struct attribute *attr, const char *buf,
+				      size_t count)
 {
 	struct goodix_ext_module *module = to_ext_module(kobj);
 	struct goodix_ext_attribute *ext_attr = to_ext_attr(attr);
@@ -350,56 +346,61 @@ struct kobject *goodix_get_default_kobj(void)
 {
 	struct kobject *kobj = NULL;
 
-	if (goodix_modules.core_data &&
-			goodix_modules.core_data->pdev)
+	if (goodix_modules.core_data && goodix_modules.core_data->pdev)
 		kobj = &goodix_modules.core_data->pdev->dev.kobj;
 	return kobj;
 }
 
 /* show driver infomation */
 static ssize_t goodix_ts_driver_info_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+					  struct device_attribute *attr,
+					  char *buf)
 {
 	return snprintf(buf, PAGE_SIZE, "DriverVersion:%s\n",
 			GOODIX_DRIVER_VERSION);
 }
 
 /* show chip infoamtion */
-static ssize_t goodix_ts_chip_info_show(struct device  *dev,
-		struct device_attribute *attr, char *buf)
+static ssize_t goodix_ts_chip_info_show(struct device *dev,
+					struct device_attribute *attr,
+					char *buf)
 {
 	struct goodix_ts_core *core_data = dev_get_drvdata(dev);
 	struct goodix_ts_hw_ops *hw_ops = core_data->hw_ops;
 	struct goodix_fw_version chip_ver;
-	u8 temp_pid[8] = {0};
+	u8 temp_pid[8] = { 0 };
 	int ret;
 	int cnt = -EINVAL;
 
 	if (hw_ops->read_version) {
 		ret = hw_ops->read_version(core_data, &chip_ver);
 		if (!ret) {
-			memcpy(temp_pid, chip_ver.rom_pid, sizeof(chip_ver.rom_pid));
+			memcpy(temp_pid, chip_ver.rom_pid,
+			       sizeof(chip_ver.rom_pid));
 			cnt = snprintf(&buf[0], PAGE_SIZE,
-				"rom_pid:%s\nrom_vid:%02x%02x%02x\n",
-				temp_pid, chip_ver.rom_vid[0],
-				chip_ver.rom_vid[1], chip_ver.rom_vid[2]);
-			cnt += snprintf(&buf[cnt], PAGE_SIZE,
+				       "rom_pid:%s\nrom_vid:%02x%02x%02x\n",
+				       temp_pid, chip_ver.rom_vid[0],
+				       chip_ver.rom_vid[1],
+				       chip_ver.rom_vid[2]);
+			cnt += snprintf(
+				&buf[cnt], PAGE_SIZE,
 				"patch_pid:%s\npatch_vid:%02x%02x%02x%02x\n",
 				chip_ver.patch_pid, chip_ver.patch_vid[0],
 				chip_ver.patch_vid[1], chip_ver.patch_vid[2],
 				chip_ver.patch_vid[3]);
-			cnt += snprintf(&buf[cnt], PAGE_SIZE,
-				"sensorid:%d\n", chip_ver.sensor_id);
+			cnt += snprintf(&buf[cnt], PAGE_SIZE, "sensorid:%d\n",
+					chip_ver.sensor_id);
 		}
 	}
 
 	if (hw_ops->get_ic_info) {
 		ret = hw_ops->get_ic_info(core_data, &core_data->ic_info);
 		if (!ret) {
-			cnt += snprintf(&buf[cnt], PAGE_SIZE,
-				"config_id:%x\n", core_data->ic_info.version.config_id);
-			cnt += snprintf(&buf[cnt], PAGE_SIZE,
-				"config_version:%x\n", core_data->ic_info.version.config_version);
+			cnt += snprintf(&buf[cnt], PAGE_SIZE, "config_id:%x\n",
+					core_data->ic_info.version.config_id);
+			cnt += snprintf(
+				&buf[cnt], PAGE_SIZE, "config_version:%x\n",
+				core_data->ic_info.version.config_version);
 		}
 	}
 
@@ -409,8 +410,7 @@ static ssize_t goodix_ts_chip_info_show(struct device  *dev,
 /* reset chip */
 static ssize_t goodix_ts_reset_store(struct device *dev,
 				     struct device_attribute *attr,
-				     const char *buf,
-				     size_t count)
+				     const char *buf, size_t count)
 {
 	struct goodix_ts_core *core_data = dev_get_drvdata(dev);
 	struct goodix_ts_hw_ops *hw_ops = core_data->hw_ops;
@@ -424,8 +424,7 @@ static ssize_t goodix_ts_reset_store(struct device *dev,
 
 /* read config */
 static ssize_t goodix_ts_read_cfg_show(struct device *dev,
-					struct device_attribute *attr,
-					char *buf)
+				       struct device_attribute *attr, char *buf)
 {
 	struct goodix_ts_core *core_data = dev_get_drvdata(dev);
 	struct goodix_ts_hw_ops *hw_ops = core_data->hw_ops;
@@ -447,7 +446,7 @@ static ssize_t goodix_ts_read_cfg_show(struct device *dev,
 		offset = 0;
 		for (i = 0; i < 200; i++) { // only print 200 bytes
 			offset += snprintf(&buf[offset], PAGE_SIZE - offset,
-					"%02x,", cfg_buf[i]);
+					   "%02x,", cfg_buf[i]);
 			if ((i + 1) % 20 == 0)
 				buf[offset++] = '\n';
 		}
@@ -476,8 +475,8 @@ static u8 ascii2hex(u8 a)
 	return value;
 }
 
-static int goodix_ts_convert_0x_data(const u8 *buf, int buf_size,
-				     u8 *out_buf, int *out_buf_len)
+static int goodix_ts_convert_0x_data(const u8 *buf, int buf_size, u8 *out_buf,
+				     int *out_buf_len)
 {
 	int i, m_size = 0;
 	int temp_index = 0;
@@ -507,8 +506,8 @@ static int goodix_ts_convert_0x_data(const u8 *buf, int buf_size,
 		high = ascii2hex(buf[i + 1]);
 		low = ascii2hex(buf[i + 2]);
 		if (high == 0xff || low == 0xff) {
-			ts_err("failed convert: 0x%x, 0x%x",
-				buf[i + 1], buf[i + 2]);
+			ts_err("failed convert: 0x%x, 0x%x", buf[i + 1],
+			       buf[i + 2]);
 			return -EINVAL;
 		}
 		out_buf[temp_index++] = (high << 4) + low;
@@ -518,8 +517,8 @@ static int goodix_ts_convert_0x_data(const u8 *buf, int buf_size,
 
 /* send config */
 static ssize_t goodix_ts_send_cfg_store(struct device *dev,
-						struct device_attribute *attr,
-						const char *buf, size_t count)
+					struct device_attribute *attr,
+					const char *buf, size_t count)
 {
 	struct goodix_ts_core *core_data = dev_get_drvdata(dev);
 	struct goodix_ts_hw_ops *hw_ops = core_data->hw_ops;
@@ -539,7 +538,7 @@ static ssize_t goodix_ts_send_cfg_store(struct device *dev,
 	ret = request_firmware(&cfg_img, GOODIX_DEFAULT_CFG_NAME, dev);
 	if (ret < 0) {
 		ts_err("cfg file [%s] not available,errno:%d",
-			GOODIX_DEFAULT_CFG_NAME, ret);
+		       GOODIX_DEFAULT_CFG_NAME, ret);
 		goto exit;
 	} else {
 		ts_info("cfg file [%s] is ready", GOODIX_DEFAULT_CFG_NAME);
@@ -550,7 +549,7 @@ static ssize_t goodix_ts_send_cfg_store(struct device *dev,
 		goto exit;
 
 	if (goodix_ts_convert_0x_data(cfg_img->data, cfg_img->size,
-			config->data, &config->len)) {
+				      config->data, &config->len)) {
 		ts_err("convert config data FAILED");
 		goto exit;
 	}
@@ -577,15 +576,15 @@ static u8 rw_flag;
 static u8 store_buf[32];
 static u8 show_buf[PAGE_SIZE];
 static ssize_t goodix_ts_reg_rw_show(struct device *dev,
-			struct device_attribute *attr, char *buf)
+				     struct device_attribute *attr, char *buf)
 {
 	struct goodix_ts_core *core_data = dev_get_drvdata(dev);
 	struct goodix_ts_hw_ops *hw_ops = core_data->hw_ops;
 	int ret;
 
 	if (!rw_addr || !rw_len) {
-		ts_err("address(0x%x) and length(%d) can't be null",
-			rw_addr, rw_len);
+		ts_err("address(0x%x) and length(%d) can't be null", rw_addr,
+		       rw_len);
 		return -EINVAL;
 	}
 
@@ -597,12 +596,13 @@ static ssize_t goodix_ts_reg_rw_show(struct device *dev,
 	ret = hw_ops->read(core_data, rw_addr, show_buf, rw_len);
 	if (ret < 0) {
 		ts_err("failed read addr(%x) length(%d)", rw_addr, rw_len);
-		return snprintf(buf, PAGE_SIZE, "failed read addr(%x), len(%d)\n",
-			rw_addr, rw_len);
+		return snprintf(buf, PAGE_SIZE,
+				"failed read addr(%x), len(%d)\n", rw_addr,
+				rw_len);
 	}
 
-	return snprintf(buf, PAGE_SIZE, "0x%x,%d {%*ph}\n",
-		rw_addr, rw_len, rw_len, show_buf);
+	return snprintf(buf, PAGE_SIZE, "0x%x,%d {%*ph}\n", rw_addr, rw_len,
+			rw_len, show_buf);
 }
 
 static ssize_t goodix_ts_reg_rw_store(struct device *dev,
@@ -684,26 +684,24 @@ static ssize_t goodix_ts_reg_rw_store(struct device *dev,
 	}
 	ret = hw_ops->write(core_data, rw_addr, store_buf, rw_len);
 	if (ret < 0) {
-		ts_err("failed write addr(%x) data %*ph", rw_addr,
-			rw_len, store_buf);
+		ts_err("failed write addr(%x) data %*ph", rw_addr, rw_len,
+		       store_buf);
 		goto err_out;
 	}
 
-	ts_info("%s write to addr (%x) with data %*ph",
-		"success", rw_addr, rw_len, store_buf);
+	ts_info("%s write to addr (%x) with data %*ph", "success", rw_addr,
+		rw_len, store_buf);
 
 	return count;
 err_out:
 	snprintf(show_buf, PAGE_SIZE, "%s\n",
-		"invalid params, format{r/w:4100:length:[41:21:31]}");
+		 "invalid params, format{r/w:4100:length:[41:21:31]}");
 	return -EINVAL;
-
 }
 
 /* show irq infomation */
 static ssize_t goodix_ts_irq_info_show(struct device *dev,
-				       struct device_attribute *attr,
-				       char *buf)
+				       struct device_attribute *attr, char *buf)
 {
 	struct goodix_ts_core *core_data = dev_get_drvdata(dev);
 	struct irq_desc *desc;
@@ -716,8 +714,8 @@ static ssize_t goodix_ts_irq_info_show(struct device *dev,
 
 	offset += r;
 	r = snprintf(&buf[offset], PAGE_SIZE - offset, "state:%s\n",
-		     atomic_read(&core_data->irq_enabled) ?
-		     "enabled" : "disabled");
+		     atomic_read(&core_data->irq_enabled) ? "enabled" :
+							    "disabled");
 	if (r < 0)
 		return -EINVAL;
 
@@ -730,7 +728,7 @@ static ssize_t goodix_ts_irq_info_show(struct device *dev,
 
 	offset += r;
 	r = snprintf(&buf[offset], PAGE_SIZE - offset, "trigger-count:%zu\n",
-		core_data->irq_trig_cnt);
+		     core_data->irq_trig_cnt);
 	if (r < 0)
 		return -EINVAL;
 
@@ -764,16 +762,14 @@ static ssize_t goodix_ts_irq_info_store(struct device *dev,
 
 /* show esd status */
 static ssize_t goodix_ts_esd_info_show(struct device *dev,
-				       struct device_attribute *attr,
-				       char *buf)
+				       struct device_attribute *attr, char *buf)
 {
 	struct goodix_ts_core *core_data = dev_get_drvdata(dev);
 	struct goodix_ts_esd *ts_esd = &core_data->ts_esd;
 	int r = 0;
 
 	r = snprintf(buf, PAGE_SIZE, "state:%s\n",
-		     atomic_read(&ts_esd->esd_on) ?
-		     "enabled" : "disabled");
+		     atomic_read(&ts_esd->esd_on) ? "enabled" : "disabled");
 
 	return r;
 }
@@ -795,22 +791,21 @@ static ssize_t goodix_ts_esd_info_store(struct device *dev,
 
 /* debug level show */
 static ssize_t goodix_ts_debug_log_show(struct device *dev,
-				       struct device_attribute *attr,
-				       char *buf)
+					struct device_attribute *attr,
+					char *buf)
 {
 	int r = 0;
 
 	r = snprintf(buf, PAGE_SIZE, "state:%s\n",
-		    debug_log_flag ?
-		    "enabled" : "disabled");
+		     debug_log_flag ? "enabled" : "disabled");
 
 	return r;
 }
 
 /* debug level store */
 static ssize_t goodix_ts_debug_log_store(struct device *dev,
-					struct device_attribute *attr,
-					const char *buf, size_t count)
+					 struct device_attribute *attr,
+					 const char *buf, size_t count)
 {
 	if (!buf || count <= 0)
 		return -EINVAL;
@@ -824,110 +819,109 @@ static ssize_t goodix_ts_debug_log_store(struct device *dev,
 
 /* double tap gesture show */
 static ssize_t goodix_ts_double_tap_show(struct device *dev,
-				struct device_attribute *attr, char *buf)
+					 struct device_attribute *attr,
+					 char *buf)
 {
 	int r = 0;
 
 	r = snprintf(buf, PAGE_SIZE, "state:%s\n",
-			goodix_core_data->double_wakeup ?
-			"enabled" : "disabled");
+		     goodix_core_data->double_wakeup ? "enabled" : "disabled");
 
 	return r;
 }
 
 /* double tap gesture store */
 static ssize_t goodix_ts_double_tap_store(struct device *dev,
-					struct device_attribute *attr,
-					const char *buf, size_t count)
+					  struct device_attribute *attr,
+					  const char *buf, size_t count)
 {
 	if (!buf || count <= 0)
 		return -EINVAL;
 
 	if (buf[0] != '0') {
 		goodix_core_data->double_wakeup = 1;
-		queue_work(goodix_core_data->gesture_wq, &goodix_core_data->gesture_work);
-	}
-	else {
+		queue_work(goodix_core_data->gesture_wq,
+			   &goodix_core_data->gesture_work);
+	} else {
 		goodix_core_data->double_wakeup = 0;
-		queue_work(goodix_core_data->gesture_wq, &goodix_core_data->gesture_work);
+		queue_work(goodix_core_data->gesture_wq,
+			   &goodix_core_data->gesture_work);
 	}
 	return count;
 }
 
 /* aod gesture show */
 static ssize_t goodix_ts_aod_show(struct device *dev,
-				struct device_attribute *attr, char *buf)
+				  struct device_attribute *attr, char *buf)
 {
 	int r = 0;
 
 	r = snprintf(buf, PAGE_SIZE, "state:%s\n",
-			goodix_core_data->aod_status ?
-			"enabled" : "disabled");
+		     goodix_core_data->aod_status ? "enabled" : "disabled");
 
 	return r;
 }
 
 /* aod gesture_store */
 static ssize_t goodix_ts_aod_store(struct device *dev,
-					struct device_attribute *attr,
-					const char *buf, size_t count)
+				   struct device_attribute *attr,
+				   const char *buf, size_t count)
 {
 	if (!buf || count <= 0)
 		return -EINVAL;
 
 	if (buf[0] != '0') {
 		goodix_core_data->aod_status = 1;
-		queue_work(goodix_core_data->gesture_wq, &goodix_core_data->gesture_work);
-	}
-	else {
+		queue_work(goodix_core_data->gesture_wq,
+			   &goodix_core_data->gesture_work);
+	} else {
 		goodix_core_data->aod_status = 0;
-		queue_work(goodix_core_data->gesture_wq, &goodix_core_data->gesture_work);
+		queue_work(goodix_core_data->gesture_wq,
+			   &goodix_core_data->gesture_work);
 	}
 	return count;
 }
 
 /* fod gesture show */
 static ssize_t goodix_ts_fod_show(struct device *dev,
-				struct device_attribute *attr, char *buf)
+				  struct device_attribute *attr, char *buf)
 {
 	int r = 0;
 
 	r = snprintf(buf, PAGE_SIZE, "state:%s\n",
-			goodix_core_data->fod_status ?
-			"enabled" : "disabled");
+		     goodix_core_data->fod_status ? "enabled" : "disabled");
 
 	return r;
 }
 
 /* fod gesture_store */
 static ssize_t goodix_ts_fod_store(struct device *dev,
-					struct device_attribute *attr,
-					const char *buf, size_t count)
+				   struct device_attribute *attr,
+				   const char *buf, size_t count)
 {
 	if (!buf || count <= 0)
 		return -EINVAL;
 
 	if (buf[0] != '0') {
 		goodix_core_data->fod_status = 1;
-		queue_work(goodix_core_data->gesture_wq, &goodix_core_data->gesture_work);
-	}
-	else {
+		queue_work(goodix_core_data->gesture_wq,
+			   &goodix_core_data->gesture_work);
+	} else {
 		goodix_core_data->fod_status = 0;
-		queue_work(goodix_core_data->gesture_wq, &goodix_core_data->gesture_work);
+		queue_work(goodix_core_data->gesture_wq,
+			   &goodix_core_data->gesture_work);
 	}
 	return count;
 }
 
-
 /* report_rate show */
 static ssize_t goodix_report_rate_show(struct device *dev,
-				struct device_attribute *attr, char *buf)
+				       struct device_attribute *attr, char *buf)
 {
 	int r = 0;
 
 	r = snprintf(buf, PAGE_SIZE, "touch report rate::%s\n",
-			goodix_core_data->report_rate == 240 ?
-			"240HZ" : "480HZ");
+		     goodix_core_data->report_rate == 240 ? "240HZ" : "480HZ");
 
 	return r;
 }
@@ -953,8 +947,8 @@ static ssize_t goodix_report_rate_store(struct device *dev,
 }
 
 static ssize_t goodix_fod_test_store(struct device *dev,
-				  struct device_attribute *attr,
-				  const char *buf, size_t count)
+				     struct device_attribute *attr,
+				     const char *buf, size_t count)
 {
 	int value = 0;
 	struct goodix_ts_core *cd = dev_get_drvdata(dev);
@@ -986,8 +980,7 @@ static ssize_t goodix_fod_test_store(struct device *dev,
 		input_sync(cd->input_dev);
 
 		input_mt_slot(cd->input_dev, 9);
-		input_mt_report_slot_state(cd->input_dev,
-					   MT_TOOL_FINGER, 0);
+		input_mt_report_slot_state(cd->input_dev, MT_TOOL_FINGER, 0);
 
 		input_report_key(cd->input_dev, BTN_TOUCH, 0);
 		input_report_key(cd->input_dev, BTN_TOOL_FINGER, 0);
@@ -1004,15 +997,19 @@ static DEVICE_ATTR(reset, 0220, NULL, goodix_ts_reset_store);
 static DEVICE_ATTR(send_cfg, 0220, NULL, goodix_ts_send_cfg_store);
 static DEVICE_ATTR(read_cfg, 0444, goodix_ts_read_cfg_show, NULL);
 static DEVICE_ATTR(reg_rw, 0664, goodix_ts_reg_rw_show, goodix_ts_reg_rw_store);
-static DEVICE_ATTR(irq_info, 0664, goodix_ts_irq_info_show, goodix_ts_irq_info_store);
-static DEVICE_ATTR(esd_info, 0664, goodix_ts_esd_info_show, goodix_ts_esd_info_store);
-static DEVICE_ATTR(debug_log, 0664, goodix_ts_debug_log_show, goodix_ts_debug_log_store);
-static DEVICE_ATTR(double_tap_enable, 0664, goodix_ts_double_tap_show, goodix_ts_double_tap_store);
+static DEVICE_ATTR(irq_info, 0664, goodix_ts_irq_info_show,
+		   goodix_ts_irq_info_store);
+static DEVICE_ATTR(esd_info, 0664, goodix_ts_esd_info_show,
+		   goodix_ts_esd_info_store);
+static DEVICE_ATTR(debug_log, 0664, goodix_ts_debug_log_show,
+		   goodix_ts_debug_log_store);
+static DEVICE_ATTR(double_tap_enable, 0664, goodix_ts_double_tap_show,
+		   goodix_ts_double_tap_store);
 static DEVICE_ATTR(aod_enable, 0664, goodix_ts_aod_show, goodix_ts_aod_store);
-static DEVICE_ATTR(switch_report_rate, 0664, goodix_report_rate_show, goodix_report_rate_store);
+static DEVICE_ATTR(switch_report_rate, 0664, goodix_report_rate_show,
+		   goodix_report_rate_store);
 static DEVICE_ATTR(fod_enable, 0664, goodix_ts_fod_show, goodix_ts_fod_store);
 static DEVICE_ATTR(fod_test, 0664, NULL, goodix_fod_test_store);
-
 
 static struct attribute *sysfs_attrs[] = {
 	&dev_attr_driver_info.attr,
@@ -1115,7 +1112,8 @@ exit:
 
 static int rawdata_proc_open(struct inode *inode, struct file *file)
 {
-	return single_open_size(file, rawdata_proc_show, PDE_DATA(inode), PAGE_SIZE * 10);
+	return single_open_size(file, rawdata_proc_show, PDE_DATA(inode),
+				PAGE_SIZE * 10);
 }
 
 static const struct proc_ops rawdata_proc_fops = {
@@ -1155,7 +1153,8 @@ exit:
 
 static int framedata_proc_open(struct inode *inode, struct file *file)
 {
-	return single_open_size(file, framedata_proc_show, PDE_DATA(inode), PAGE_SIZE * 10);
+	return single_open_size(file, framedata_proc_show, PDE_DATA(inode),
+				PAGE_SIZE * 10);
 }
 
 static const struct proc_ops framedata_proc_fops = {
@@ -1170,16 +1169,15 @@ static void goodix_ts_procfs_init(struct goodix_ts_core *core_data)
 	if (!proc_mkdir("goodix_ts", NULL))
 		return;
 
-	proc_create_data("tp_data_dump",
-			0666, NULL, &rawdata_proc_fops, core_data);
-	proc_create_data("goodix_ts/tp_capacitance_data",
-			0666, NULL, &rawdata_proc_fops, core_data);
+	proc_create_data("tp_data_dump", 0666, NULL, &rawdata_proc_fops,
+			 core_data);
+	proc_create_data("goodix_ts/tp_capacitance_data", 0666, NULL,
+			 &rawdata_proc_fops, core_data);
 
 	if (core_data->bus->ic_type == IC_TYPE_BERLIN_D) {
-		proc_create_data("goodix_ts/get_frame_data",
-				0666, NULL, &framedata_proc_fops, core_data);
+		proc_create_data("goodix_ts/get_frame_data", 0666, NULL,
+				 &framedata_proc_fops, core_data);
 	}
-
 }
 
 static void goodix_ts_procfs_exit(struct goodix_ts_core *core_data)
@@ -1221,7 +1219,7 @@ int goodix_ts_blocking_notify(enum ts_notify_event evt, void *v)
 	int ret;
 
 	ret = blocking_notifier_call_chain(&ts_notifier_list,
-			(unsigned long)evt, v);
+					   (unsigned long)evt, v);
 	return ret;
 }
 
@@ -1233,33 +1231,33 @@ int goodix_ts_blocking_notify(enum ts_notify_event evt, void *v)
  * return: 0 - no error, <0 error
  */
 static int goodix_parse_dt_resolution(struct device_node *node,
-		struct goodix_ts_board_data *board_data)
+				      struct goodix_ts_board_data *board_data)
 {
 	int ret;
 
 	ret = of_property_read_u32(node, "goodix,panel-max-x",
-				 &board_data->panel_max_x);
+				   &board_data->panel_max_x);
 	if (ret) {
 		ts_err("failed get panel-max-x");
 		return ret;
 	}
 
 	ret = of_property_read_u32(node, "goodix,panel-max-y",
-				 &board_data->panel_max_y);
+				   &board_data->panel_max_y);
 	if (ret) {
 		ts_err("failed get panel-max-y");
 		return ret;
 	}
 
 	ret = of_property_read_u32(node, "goodix,panel-max-w",
-				 &board_data->panel_max_w);
+				   &board_data->panel_max_w);
 	if (ret) {
 		ts_err("failed get panel-max-w");
 		return ret;
 	}
 
 	ret = of_property_read_u32(node, "goodix,panel-max-p",
-				 &board_data->panel_max_p);
+				   &board_data->panel_max_p);
 	if (ret) {
 		ts_err("failed get panel-max-p, use default");
 		board_data->panel_max_p = GOODIX_PEN_MAX_PRESSURE;
@@ -1275,7 +1273,7 @@ static int goodix_parse_dt_resolution(struct device_node *node,
  * return: 0 - no error, <0 error
  */
 static int goodix_parse_dt(struct device_node *node,
-	struct goodix_ts_board_data *board_data)
+			   struct goodix_ts_board_data *board_data)
 {
 	const char *name_tmp;
 	int r;
@@ -1320,7 +1318,7 @@ static int goodix_parse_dt(struct device_node *node,
 	board_data->irq_gpio = r;
 
 	r = of_property_read_u32(node, "goodix,irq-flags",
-			&board_data->irq_flags);
+				 &board_data->irq_flags);
 	if (r) {
 		ts_err("invalid irq-flags");
 		return -EINVAL;
@@ -1331,8 +1329,8 @@ static int goodix_parse_dt(struct device_node *node,
 	if (!r) {
 		ts_info("avdd name from dt: %s", name_tmp);
 		if (strlen(name_tmp) < sizeof(board_data->avdd_name))
-			strncpy(board_data->avdd_name,
-				name_tmp, sizeof(board_data->avdd_name));
+			strncpy(board_data->avdd_name, name_tmp,
+				sizeof(board_data->avdd_name));
 		else
 			ts_info("invalied avdd name length: %ld > %ld",
 				strlen(name_tmp),
@@ -1344,8 +1342,8 @@ static int goodix_parse_dt(struct device_node *node,
 	if (!r) {
 		ts_info("iovdd name from dt: %s", name_tmp);
 		if (strlen(name_tmp) < sizeof(board_data->iovdd_name))
-			strncpy(board_data->iovdd_name,
-				name_tmp, sizeof(board_data->iovdd_name));
+			strncpy(board_data->iovdd_name, name_tmp,
+				sizeof(board_data->iovdd_name));
 		else
 			ts_info("invalied iovdd name length: %ld > %ld",
 				strlen(name_tmp),
@@ -1358,27 +1356,30 @@ static int goodix_parse_dt(struct device_node *node,
 		ts_info("firmware name from dt: %s", name_tmp);
 		strncpy(board_data->fw, name_tmp, sizeof(board_data->fw_name));
 	} else {
-		ts_info("can't find firmware name, use default: %s", TS_DEFAULT_FIRMWARE);
-		strncpy(board_data->fw_name, TS_DEFAULT_FIRMWARE, sizeof(board_data->fw_name));
+		ts_info("can't find firmware name, use default: %s",
+			TS_DEFAULT_FIRMWARE);
+		strncpy(board_data->fw_name, TS_DEFAULT_FIRMWARE,
+			sizeof(board_data->fw_name));
 	}
 
 	/* get config file name */
 	r = of_property_read_string(node, "goodix,config-name", &name_tmp);
 	if (!r) {
 		ts_info("config name from dt: %s", name_tmp);
-		strncpy(board_data->cfg_bin, name_tmp, sizeof(board_data->cfg_bin_name));
+		strncpy(board_data->cfg_bin, name_tmp,
+			sizeof(board_data->cfg_bin_name));
 	} else {
-		ts_info("can't find config name, use default: %s", TS_DEFAULT_CFG_BIN);
-		strncpy(board_data->cfg_bin_name, TS_DEFAULT_CFG_BIN, sizeof(board_data->cfg_bin_name));
+		ts_info("can't find config name, use default: %s",
+			TS_DEFAULT_CFG_BIN);
+		strncpy(board_data->cfg_bin_name, TS_DEFAULT_CFG_BIN,
+			sizeof(board_data->cfg_bin_name));
 	}
 
 	r = of_property_count_u32_elems(node, "goodix,touch-expert-array");
 
 	if (r == GAME_ARRAY_LEN * GAME_ARRAY_SIZE) {
-		of_property_read_u32_array(node,
-					   "goodix,touch-expert-array",
-					   board_data->touch_expert_array,
-					   r);
+		of_property_read_u32_array(node, "goodix,touch-expert-array",
+					   board_data->touch_expert_array, r);
 	} else {
 		ts_err("Failed to parse touch-expert-array:%d", r);
 	}
@@ -1391,8 +1392,8 @@ static int goodix_parse_dt(struct device_node *node,
 	}
 
 	/*get pen-enable switch and pen keys, must after "key map"*/
-	board_data->pen_enable = of_property_read_bool(node,
-					"goodix,pen-enable");
+	board_data->pen_enable =
+		of_property_read_bool(node, "goodix,pen-enable");
 	if (board_data->pen_enable)
 		ts_info("goodix pen enabled");
 
@@ -1405,7 +1406,7 @@ static int goodix_parse_dt(struct device_node *node,
 #endif
 
 static void goodix_ts_report_pen(struct input_dev *dev,
-		struct goodix_pen_data *pen_data)
+				 struct goodix_pen_data *pen_data)
 {
 	int i;
 
@@ -1419,11 +1420,13 @@ static void goodix_ts_report_pen(struct input_dev *dev,
 		input_report_abs(dev, ABS_PRESSURE, pen_data->coords.p);
 		input_report_abs(dev, ABS_TILT_X, pen_data->coords.tilt_x);
 		input_report_abs(dev, ABS_TILT_Y, pen_data->coords.tilt_y);
-		ts_debug("pen_data:x %d, y %d, p%d, tilt_x %d tilt_y %d key[%d %d]",
-				pen_data->coords.x, pen_data->coords.y,
-				pen_data->coords.p, pen_data->coords.tilt_x,
-				pen_data->coords.tilt_y, pen_data->keys[0].status == TS_TOUCH ? 1 : 0,
-				pen_data->keys[1].status == TS_TOUCH ? 1 : 0);
+		ts_debug(
+			"pen_data:x %d, y %d, p%d, tilt_x %d tilt_y %d key[%d %d]",
+			pen_data->coords.x, pen_data->coords.y,
+			pen_data->coords.p, pen_data->coords.tilt_x,
+			pen_data->coords.tilt_y,
+			pen_data->keys[0].status == TS_TOUCH ? 1 : 0,
+			pen_data->keys[1].status == TS_TOUCH ? 1 : 0);
 	} else {
 		input_report_key(dev, BTN_TOUCH, 0);
 		input_report_key(dev, pen_data->coords.tool_type, 0);
@@ -1440,7 +1443,7 @@ static void goodix_ts_report_pen(struct input_dev *dev,
 }
 
 static void goodix_ts_report_finger(struct input_dev *dev,
-		struct goodix_touch_data *touch_data)
+				    struct goodix_touch_data *touch_data)
 {
 	unsigned int touch_num = touch_data->touch_num;
 	int i;
@@ -1448,53 +1451,57 @@ static void goodix_ts_report_finger(struct input_dev *dev,
 
 	mutex_lock(&dev->mutex);
 #ifdef GOODIX_FOD_AREA_REPORT
-	if ((goodix_core_data->eventsdata & 0x08) && ((goodix_core_data->fod_status == 1) ||
-		(goodix_core_data->fod_status == 2) || (goodix_core_data->fod_status == 3))
-		&& (!goodix_core_data->fod_finger)) {
-
-			goodix_core_data->fod_finger = true;
-			if (goodix_core_data->fod_status == 3
-				|| goodix_core_data->fod_down_before_suspend)
-				goto finger_pos;
-			ts_info("fod down");
-			input_report_key(dev, BTN_INFO, 1);
-			input_sync(dev);
-			update_fod_press_status(1);
-			mi_disp_set_fod_queue_work(1, true);
-			ts_info("fod finger is %d",goodix_core_data->fod_finger);
+	if ((goodix_core_data->eventsdata & 0x08) &&
+	    ((goodix_core_data->fod_status == 1) ||
+	     (goodix_core_data->fod_status == 2) ||
+	     (goodix_core_data->fod_status == 3)) &&
+	    (!goodix_core_data->fod_finger)) {
+		goodix_core_data->fod_finger = true;
+		if (goodix_core_data->fod_status == 3 ||
+		    goodix_core_data->fod_down_before_suspend)
 			goto finger_pos;
-	} else if ((goodix_core_data->eventsdata & 0x08) != 0x08 && goodix_core_data->fod_finger) {
-			ts_info("ts fod up");
-			goodix_core_data->fod_down_before_suspend = false;
-			input_report_key(dev, BTN_INFO, 0);
-			input_report_abs(dev, ABS_MT_WIDTH_MAJOR, 0);
-			input_report_abs(dev, ABS_MT_WIDTH_MINOR, 0);
-			input_sync(dev);
-			update_fod_press_status(0);
-			mi_disp_set_fod_queue_work(0, true);
-			goodix_core_data->fod_finger = false;
-			ts_info("fod finger is %d",goodix_core_data->fod_finger);
-			goto finger_pos;
-		}
+		ts_info("fod down");
+		input_report_key(dev, BTN_INFO, 1);
+		input_sync(dev);
+		update_fod_press_status(1);
+		mi_disp_set_fod_queue_work(1, true);
+		ts_info("fod finger is %d", goodix_core_data->fod_finger);
+		goto finger_pos;
+	} else if ((goodix_core_data->eventsdata & 0x08) != 0x08 &&
+		   goodix_core_data->fod_finger) {
+		ts_info("ts fod up");
+		goodix_core_data->fod_down_before_suspend = false;
+		input_report_key(dev, BTN_INFO, 0);
+		input_report_abs(dev, ABS_MT_WIDTH_MAJOR, 0);
+		input_report_abs(dev, ABS_MT_WIDTH_MINOR, 0);
+		input_sync(dev);
+		update_fod_press_status(0);
+		mi_disp_set_fod_queue_work(0, true);
+		goodix_core_data->fod_finger = false;
+		ts_info("fod finger is %d", goodix_core_data->fod_finger);
+		goto finger_pos;
+	}
 finger_pos:
 #endif
 	for (i = 0; i < GOODIX_MAX_TOUCH; i++) {
 		if (touch_data->coords[i].status == TS_TOUCH) {
 			ts_debug("report: id %d, x %d, y %d, w %d", i,
-				touch_data->coords[i].x, touch_data->coords[i].y,
-				touch_data->coords[i].w);
+				 touch_data->coords[i].x,
+				 touch_data->coords[i].y,
+				 touch_data->coords[i].w);
 			input_mt_slot(dev, i);
 			input_mt_report_slot_state(dev, MT_TOOL_FINGER, true);
 			input_report_abs(dev, ABS_MT_POSITION_X,
-					touch_data->coords[i].x);
+					 touch_data->coords[i].x);
 			input_report_abs(dev, ABS_MT_POSITION_Y,
-					touch_data->coords[i].y);
-	if ((goodix_core_data->eventsdata & 0x08) != 0x08 || !goodix_core_data->fod_status)
-		touch_data->overlay = 0;
-	input_report_abs(dev, ABS_MT_WIDTH_MAJOR,
-					touch_data->overlay);
-	input_report_abs(dev, ABS_MT_WIDTH_MINOR,
-					touch_data->overlay);
+					 touch_data->coords[i].y);
+			if ((goodix_core_data->eventsdata & 0x08) != 0x08 ||
+			    !goodix_core_data->fod_status)
+				touch_data->overlay = 0;
+			input_report_abs(dev, ABS_MT_WIDTH_MAJOR,
+					 touch_data->overlay);
+			input_report_abs(dev, ABS_MT_WIDTH_MINOR,
+					 touch_data->overlay);
 #ifdef GOODIX_XIAOMI_TOUCHFEATURE
 			last_touch_events_collect(i, 1);
 #endif
@@ -1507,10 +1514,10 @@ finger_pos:
 		}
 	}
 
-	if (touch_num && !pre_finger_num) {	/*first touch down */
+	if (touch_num && !pre_finger_num) { /*first touch down */
 		input_report_key(dev, BTN_TOUCH, 1);
 		gtp_qos_request(goodix_core_data);
-	} else if (!touch_num && pre_finger_num) {	/*last touch up */
+	} else if (!touch_num && pre_finger_num) { /*last touch up */
 		input_report_key(dev, BTN_TOUCH, 0);
 		goodix_core_data->fod_down_before_suspend = false;
 		if (goodix_core_data->fod_finger) {
@@ -1523,7 +1530,9 @@ finger_pos:
 			mi_disp_set_fod_queue_work(0, true);
 			goodix_core_data->fod_finger = false;
 		}
-		cpu_latency_qos_update_request(&goodix_core_data->gtp_qos_request, PM_QOS_DEFAULT_VALUE);
+		cpu_latency_qos_update_request(
+			&goodix_core_data->gtp_qos_request,
+			PM_QOS_DEFAULT_VALUE);
 	}
 	pre_finger_num = touch_num;
 
@@ -1535,7 +1544,7 @@ finger_pos:
 }
 
 static int goodix_ts_request_handle(struct goodix_ts_core *cd,
-	struct goodix_ts_event *ts_event)
+				    struct goodix_ts_event *ts_event)
 {
 	struct goodix_ts_hw_ops *hw_ops = cd->hw_ops;
 	int ret = -1;
@@ -1546,13 +1555,12 @@ static int goodix_ts_request_handle(struct goodix_ts_core *cd,
 		ret = hw_ops->reset(cd, GOODIX_NORMAL_RESET_DELAY_MS);
 	else
 		ts_info("can not handle request type 0x%x",
-			  ts_event->request_code);
+			ts_event->request_code);
 	if (ret)
-		ts_err("failed handle request 0x%x",
-			 ts_event->request_code);
+		ts_err("failed handle request 0x%x", ts_event->request_code);
 	else
 		ts_info("success handle ic request 0x%x",
-			  ts_event->request_code);
+			ts_event->request_code);
 	return ret;
 }
 
@@ -1561,7 +1569,6 @@ void goodix_sched_sethigh(struct task_struct *p)
 	struct sched_param sp = { .sched_priority = MAX_RT_PRIO - 1 };
 	WARN_ON_ONCE(sched_setscheduler_nocheck(p, SCHED_FIFO, &sp) != 0);
 }
-
 
 /**
  * goodix_ts_threadirq_func - Bottom half of interrupt
@@ -1589,7 +1596,8 @@ static irqreturn_t goodix_ts_threadirq_func(int irq, void *data)
 #ifdef CONFIG_PM
 	if (core_data->tp_pm_suspend) {
 		ts_info("device in suspend, wait to resume");
-		ret = wait_for_completion_timeout(&core_data->pm_resume_completion, msecs_to_jiffies(50));
+		ret = wait_for_completion_timeout(
+			&core_data->pm_resume_completion, msecs_to_jiffies(50));
 		if (!ret) {
 			pm_relax(core_data->bus->dev);
 			ts_err("system can't finished resuming procedure");
@@ -1602,8 +1610,8 @@ static irqreturn_t goodix_ts_threadirq_func(int irq, void *data)
 #endif
 	/* inform external module */
 	mutex_lock(&goodix_modules.mutex);
-	list_for_each_entry_safe(ext_module, next,
-				 &goodix_modules.head, list) {
+	list_for_each_entry_safe (ext_module, next, &goodix_modules.head,
+				  list) {
 		if (!ext_module->funcs->irq_event)
 			continue;
 		ret = ext_module->funcs->irq_event(core_data, ext_module);
@@ -1618,7 +1626,7 @@ static irqreturn_t goodix_ts_threadirq_func(int irq, void *data)
 	}
 
 	if (core_data->gesture_enabled) {
-		ret =gsx_gesture_ist(core_data);
+		ret = gsx_gesture_ist(core_data);
 		if (ret == EVT_CANCEL_IRQEVT) {
 			mutex_unlock(&goodix_modules.mutex);
 #ifdef CONFIG_TOUCH_BOOST
@@ -1636,12 +1644,12 @@ static irqreturn_t goodix_ts_threadirq_func(int irq, void *data)
 		if (ts_event->event_type == EVENT_TOUCH) {
 			/* report touch */
 			goodix_ts_report_finger(core_data->input_dev,
-					&ts_event->touch_data);
+						&ts_event->touch_data);
 		}
 		if (core_data->board_data.pen_enable &&
-				ts_event->event_type == EVENT_PEN) {
+		    ts_event->event_type == EVENT_PEN) {
 			goodix_ts_report_pen(core_data->pen_dev,
-					&ts_event->pen_data);
+					     &ts_event->pen_data);
 		}
 		if (ts_event->event_type == EVENT_REQUEST) {
 			goodix_ts_request_handle(core_data, ts_event);
@@ -1680,12 +1688,10 @@ static int goodix_ts_irq_setup(struct goodix_ts_core *core_data)
 	}
 
 	ts_info("IRQ:%u,flags:%d", core_data->irq, (int)ts_bdata->irq_flags);
-	ret = devm_request_threaded_irq(&core_data->pdev->dev,
-				      core_data->irq, NULL,
-				      goodix_ts_threadirq_func,
-				      ts_bdata->irq_flags | IRQF_ONESHOT,
-				      GOODIX_CORE_DRIVER_NAME,
-				      core_data);
+	ret = devm_request_threaded_irq(&core_data->pdev->dev, core_data->irq,
+					NULL, goodix_ts_threadirq_func,
+					ts_bdata->irq_flags | IRQF_ONESHOT,
+					GOODIX_CORE_DRIVER_NAME, core_data);
 	if (ret < 0)
 		ts_err("Failed to requeset threaded irq:%d", ret);
 	else
@@ -1707,8 +1713,7 @@ static int goodix_ts_power_init(struct goodix_ts_core *core_data)
 
 	ts_info("Power init");
 	if (strlen(ts_bdata->avdd_name)) {
-		core_data->avdd = devm_regulator_get(dev,
-				 ts_bdata->avdd_name);
+		core_data->avdd = devm_regulator_get(dev, ts_bdata->avdd_name);
 		if (IS_ERR_OR_NULL(core_data->avdd)) {
 			ret = PTR_ERR(core_data->avdd);
 			ts_err("Failed to get regulator avdd:%d", ret);
@@ -1725,8 +1730,8 @@ static int goodix_ts_power_init(struct goodix_ts_core *core_data)
 	}
 
 	if (strlen(ts_bdata->iovdd_name)) {
-		core_data->iovdd = devm_regulator_get(dev,
-				 ts_bdata->iovdd_name);
+		core_data->iovdd =
+			devm_regulator_get(dev, ts_bdata->iovdd_name);
 		if (IS_ERR_OR_NULL(core_data->iovdd)) {
 			ret = PTR_ERR(core_data->iovdd);
 			ts_err("Failed to get regulator iovdd:%d", ret);
@@ -1760,36 +1765,35 @@ static int goodix_ts_pinctrl_init(struct goodix_ts_core *core_data)
 		return -EINVAL;
 	}
 	/* active state */
-	core_data->pin_sta_active = pinctrl_lookup_state(core_data->pinctrl,
-				PINCTRL_STATE_ACTIVE);
+	core_data->pin_sta_active =
+		pinctrl_lookup_state(core_data->pinctrl, PINCTRL_STATE_ACTIVE);
 	if (IS_ERR_OR_NULL(core_data->pin_sta_active)) {
 		r = PTR_ERR(core_data->pin_sta_active);
 		ts_err("Failed to get pinctrl state:%s, r:%d",
-				PINCTRL_STATE_ACTIVE, r);
+		       PINCTRL_STATE_ACTIVE, r);
 		core_data->pin_sta_active = NULL;
 		goto exit_pinctrl_put;
 	}
 
 	/* suspend state */
-	core_data->pin_sta_suspend = pinctrl_lookup_state(core_data->pinctrl,
-				PINCTRL_STATE_SUSPEND);
+	core_data->pin_sta_suspend =
+		pinctrl_lookup_state(core_data->pinctrl, PINCTRL_STATE_SUSPEND);
 	if (IS_ERR_OR_NULL(core_data->pin_sta_suspend)) {
 		r = PTR_ERR(core_data->pin_sta_suspend);
 		ts_err("Failed to get pinctrl state:%s, r:%d",
-				PINCTRL_STATE_SUSPEND, r);
+		       PINCTRL_STATE_SUSPEND, r);
 		core_data->pin_sta_suspend = NULL;
 		goto exit_pinctrl_put;
 	}
 
-	core_data->pinctrl_state_spimode
-		= pinctrl_lookup_state(core_data->pinctrl, PINCTRL_STATE_SPIMODE);
+	core_data->pinctrl_state_spimode =
+		pinctrl_lookup_state(core_data->pinctrl, PINCTRL_STATE_SPIMODE);
 
 	if (IS_ERR_OR_NULL(core_data->pinctrl_state_spimode)) {
 		r = PTR_ERR(core_data->pinctrl_state_spimode);
 		ts_err("Failed to get %s, r: %d", PINCTRL_STATE_SPIMODE, r);
 		goto exit_pinctrl_put;
 	}
-
 
 	ts_info("success get pinctrl state");
 
@@ -1853,8 +1857,8 @@ static int goodix_ts_gpio_setup(struct goodix_ts_core *core_data)
 	struct goodix_ts_board_data *ts_bdata = board_data(core_data);
 	int r = 0;
 
-	ts_info("GPIO setup,reset-gpio:%d, irq-gpio:%d",
-		ts_bdata->reset_gpio, ts_bdata->irq_gpio);
+	ts_info("GPIO setup,reset-gpio:%d, irq-gpio:%d", ts_bdata->reset_gpio,
+		ts_bdata->irq_gpio);
 	/*
 	 * after kenerl3.13, gpio_ api is deprecated, new
 	 * driver should use gpiod_ api.
@@ -1874,8 +1878,9 @@ static int goodix_ts_gpio_setup(struct goodix_ts_core *core_data)
 	}
 
 	if (ts_bdata->avdd_gpio > 0) {
-		r = devm_gpio_request_one(&core_data->pdev->dev, ts_bdata->avdd_gpio,
-				GPIOF_OUT_INIT_LOW, "ts_avdd_gpio");
+		r = devm_gpio_request_one(&core_data->pdev->dev,
+					  ts_bdata->avdd_gpio,
+					  GPIOF_OUT_INIT_LOW, "ts_avdd_gpio");
 		if (r < 0) {
 			ts_err("Failed to request avdd-gpio, r:%d", r);
 			return r;
@@ -1883,8 +1888,9 @@ static int goodix_ts_gpio_setup(struct goodix_ts_core *core_data)
 	}
 
 	if (ts_bdata->iovdd_gpio > 0) {
-		r = devm_gpio_request_one(&core_data->pdev->dev, ts_bdata->iovdd_gpio,
-				GPIOF_OUT_INIT_LOW, "ts_iovdd_gpio");
+		r = devm_gpio_request_one(&core_data->pdev->dev,
+					  ts_bdata->iovdd_gpio,
+					  GPIOF_OUT_INIT_LOW, "ts_iovdd_gpio");
 		if (r < 0) {
 			ts_err("Failed to request iovdd-gpio, r:%d", r);
 			return r;
@@ -1932,20 +1938,17 @@ static int goodix_ts_input_dev_config(struct goodix_ts_core *core_data)
 #endif
 
 	/* set input parameters */
-	input_set_abs_params(input_dev, ABS_MT_POSITION_X,
-			     0, ts_bdata->panel_max_x, 0, 0);
-	input_set_abs_params(input_dev, ABS_MT_POSITION_Y,
-			     0, ts_bdata->panel_max_y, 0, 0);
-	input_set_abs_params(input_dev, ABS_MT_TOUCH_MAJOR,
-			     0, ts_bdata->panel_max_w, 0, 0);
- 	input_set_abs_params(input_dev, ABS_MT_WIDTH_MAJOR,
-			     0, 100, 0, 0);
-	input_set_abs_params(input_dev, ABS_MT_WIDTH_MAJOR,
-			     0, 100, 0, 0);
+	input_set_abs_params(input_dev, ABS_MT_POSITION_X, 0,
+			     ts_bdata->panel_max_x, 0, 0);
+	input_set_abs_params(input_dev, ABS_MT_POSITION_Y, 0,
+			     ts_bdata->panel_max_y, 0, 0);
+	input_set_abs_params(input_dev, ABS_MT_TOUCH_MAJOR, 0,
+			     ts_bdata->panel_max_w, 0, 0);
+	input_set_abs_params(input_dev, ABS_MT_WIDTH_MAJOR, 0, 100, 0, 0);
+	input_set_abs_params(input_dev, ABS_MT_WIDTH_MAJOR, 0, 100, 0, 0);
 #ifdef INPUT_TYPE_B_PROTOCOL
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3, 7, 0)
-	input_mt_init_slots(input_dev, GOODIX_MAX_TOUCH,
-			    INPUT_MT_DIRECT);
+	input_mt_init_slots(input_dev, GOODIX_MAX_TOUCH, INPUT_MT_DIRECT);
 #else
 	input_mt_init_slots(input_dev, GOODIX_MAX_TOUCH);
 #endif
@@ -1997,12 +2000,12 @@ static int goodix_ts_pen_dev_config(struct goodix_ts_core *core_data)
 	__set_bit(INPUT_PROP_DIRECT, pen_dev->propbit);
 	input_set_abs_params(pen_dev, ABS_X, 0, ts_bdata->panel_max_x, 0, 0);
 	input_set_abs_params(pen_dev, ABS_Y, 0, ts_bdata->panel_max_y, 0, 0);
-	input_set_abs_params(pen_dev, ABS_PRESSURE, 0,
-			     ts_bdata->panel_max_p, 0, 0);
-	input_set_abs_params(pen_dev, ABS_TILT_X,
-			-GOODIX_PEN_MAX_TILT, GOODIX_PEN_MAX_TILT, 0, 0);
-	input_set_abs_params(pen_dev, ABS_TILT_Y,
-			-GOODIX_PEN_MAX_TILT, GOODIX_PEN_MAX_TILT, 0, 0);
+	input_set_abs_params(pen_dev, ABS_PRESSURE, 0, ts_bdata->panel_max_p, 0,
+			     0);
+	input_set_abs_params(pen_dev, ABS_TILT_X, -GOODIX_PEN_MAX_TILT,
+			     GOODIX_PEN_MAX_TILT, 0, 0);
+	input_set_abs_params(pen_dev, ABS_TILT_Y, -GOODIX_PEN_MAX_TILT,
+			     GOODIX_PEN_MAX_TILT, 0, 0);
 
 	r = input_register_device(pen_dev);
 	if (r < 0) {
@@ -2040,10 +2043,10 @@ void goodix_ts_pen_dev_remove(struct goodix_ts_core *core_data)
 static void goodix_ts_esd_work(struct work_struct *work)
 {
 	struct delayed_work *dwork = to_delayed_work(work);
-	struct goodix_ts_esd *ts_esd = container_of(dwork,
-			struct goodix_ts_esd, esd_work);
-	struct goodix_ts_core *cd = container_of(ts_esd,
-			struct goodix_ts_core, ts_esd);
+	struct goodix_ts_esd *ts_esd =
+		container_of(dwork, struct goodix_ts_esd, esd_work);
+	struct goodix_ts_core *cd =
+		container_of(ts_esd, struct goodix_ts_core, ts_esd);
 	const struct goodix_ts_hw_ops *hw_ops = cd->hw_ops;
 	int ret = 0;
 
@@ -2118,10 +2121,10 @@ static void goodix_ts_esd_off(struct goodix_ts_core *cd)
  *  turn on the esd protector.
  */
 static int goodix_esd_notifier_callback(struct notifier_block *nb,
-		unsigned long action, void *data)
+					unsigned long action, void *data)
 {
-	struct goodix_ts_esd *ts_esd = container_of(nb,
-			struct goodix_ts_esd, esd_notifier);
+	struct goodix_ts_esd *ts_esd =
+		container_of(nb, struct goodix_ts_esd, esd_notifier);
 
 	switch (action) {
 	case NOTIFY_FWUPDATE_START:
@@ -2172,7 +2175,7 @@ static void goodix_ts_release_connects(struct goodix_ts_core *core_data)
 
 	mutex_lock(&input_dev->mutex);
 	core_data->fod_down_before_suspend = false;
-	if(core_data->fod_finger){
+	if (core_data->fod_finger) {
 		core_data->fod_finger = false;
 		core_data->fod_down_before_suspend = true;
 		input_report_key(input_dev, BTN_INFO, 0);
@@ -2185,11 +2188,9 @@ static void goodix_ts_release_connects(struct goodix_ts_core *core_data)
 	}
 	for (i = 0; i < GOODIX_MAX_TOUCH; i++) {
 		input_mt_slot(input_dev, i);
-		input_mt_report_slot_state(input_dev,
-				MT_TOOL_FINGER,
-				false);
+		input_mt_report_slot_state(input_dev, MT_TOOL_FINGER, false);
 #ifdef GOODIX_XIAOMI_TOUCHFEATURE
-			last_touch_events_collect(i, 0);
+		last_touch_events_collect(i, 0);
 #endif
 	}
 	input_report_key(input_dev, BTN_TOUCH, 0);
@@ -2210,7 +2211,7 @@ static int goodix_ts_suspend(struct goodix_ts_core *core_data)
 	int ret;
 
 	if (core_data->init_stage < CORE_INIT_STAGE2 ||
-			atomic_read(&core_data->suspended))
+	    atomic_read(&core_data->suspended))
 		return 0;
 
 	mutex_lock(&core_data->core_mutex);
@@ -2229,13 +2230,13 @@ static int goodix_ts_suspend(struct goodix_ts_core *core_data)
 	/* inform external module */
 	mutex_lock(&goodix_modules.mutex);
 	if (!list_empty(&goodix_modules.head)) {
-		list_for_each_entry_safe(ext_module, next,
-					 &goodix_modules.head, list) {
+		list_for_each_entry_safe (ext_module, next,
+					  &goodix_modules.head, list) {
 			if (!ext_module->funcs->before_suspend)
 				continue;
 
 			ret = ext_module->funcs->before_suspend(core_data,
-							      ext_module);
+								ext_module);
 			if (ret == EVT_CANCEL_SUSPEND) {
 				mutex_unlock(&goodix_modules.mutex);
 				ts_info("Canceled by module:%s",
@@ -2246,26 +2247,26 @@ static int goodix_ts_suspend(struct goodix_ts_core *core_data)
 	}
 	mutex_unlock(&goodix_modules.mutex);
 
-	if(core_data->gesture_enabled) {
+	if (core_data->gesture_enabled) {
 		gsx_gesture_before_suspend(core_data);
-		core_data ->work_status = TP_GESTURE;
+		core_data->work_status = TP_GESTURE;
 		goto out;
 	}
 
-	core_data ->work_status = TP_SLEEP;
+	core_data->work_status = TP_SLEEP;
 	/* enter sleep mode or power off */
 	goodix_ts_power_off(core_data);
 
 	/* inform exteranl modules */
 	mutex_lock(&goodix_modules.mutex);
 	if (!list_empty(&goodix_modules.head)) {
-		list_for_each_entry_safe(ext_module, next,
-					&goodix_modules.head, list) {
+		list_for_each_entry_safe (ext_module, next,
+					  &goodix_modules.head, list) {
 			if (!ext_module->funcs->after_suspend)
 				continue;
 
 			ret = ext_module->funcs->after_suspend(core_data,
-							     ext_module);
+							       ext_module);
 			if (ret == EVT_CANCEL_SUSPEND) {
 				mutex_unlock(&goodix_modules.mutex);
 				ts_info("Canceled by module:%s",
@@ -2281,7 +2282,8 @@ out:
 	lpm_disable_for_dev(false, EVENT_INPUT);
 #endif
 	cancel_delayed_work(&core_data->qos_work);
-	cpu_latency_qos_update_request(&core_data->gtp_qos_request, PM_QOS_DEFAULT_VALUE);
+	cpu_latency_qos_update_request(&core_data->gtp_qos_request,
+				       PM_QOS_DEFAULT_VALUE);
 	goodix_ts_release_connects(core_data);
 	ts_info("Suspend end");
 	mutex_unlock(&core_data->core_mutex);
@@ -2299,7 +2301,7 @@ static int goodix_ts_resume(struct goodix_ts_core *core_data)
 	int ret;
 
 	if (core_data->init_stage < CORE_INIT_STAGE2 ||
-			!atomic_read(&core_data->suspended)) {
+	    !atomic_read(&core_data->suspended)) {
 		ts_err("already resumed!");
 		return 0;
 	}
@@ -2310,23 +2312,23 @@ static int goodix_ts_resume(struct goodix_ts_core *core_data)
 
 	mutex_lock(&goodix_modules.mutex);
 	if (!list_empty(&goodix_modules.head)) {
-		list_for_each_entry_safe(ext_module, next,
-					 &goodix_modules.head, list) {
+		list_for_each_entry_safe (ext_module, next,
+					  &goodix_modules.head, list) {
 			if (!ext_module->funcs->before_resume)
 				continue;
 
-			ret = ext_module->funcs->before_resume(core_data, ext_module);
+			ret = ext_module->funcs->before_resume(core_data,
+							       ext_module);
 			if (ret == EVT_CANCEL_RESUME) {
 				mutex_unlock(&goodix_modules.mutex);
 				ts_info("Canceled by module:%s",
-				ext_module->name);
+					ext_module->name);
 				goto out;
 			}
-
 		}
 	}
 	mutex_unlock(&goodix_modules.mutex);
-	if(core_data->work_status == TP_GESTURE) {
+	if (core_data->work_status == TP_GESTURE) {
 		gsx_gesture_before_resume(core_data);
 		core_data->work_status = TP_NORMAL;
 		goto out;
@@ -2338,13 +2340,13 @@ static int goodix_ts_resume(struct goodix_ts_core *core_data)
 	core_data->work_status = TP_NORMAL;
 	mutex_lock(&goodix_modules.mutex);
 	if (!list_empty(&goodix_modules.head)) {
-		list_for_each_entry_safe(ext_module, next,
-					 &goodix_modules.head, list) {
+		list_for_each_entry_safe (ext_module, next,
+					  &goodix_modules.head, list) {
 			if (!ext_module->funcs->after_resume)
 				continue;
 
 			ret = ext_module->funcs->after_resume(core_data,
-							    ext_module);
+							      ext_module);
 			if (ret == EVT_CANCEL_RESUME) {
 				mutex_unlock(&goodix_modules.mutex);
 				ts_info("Canceled by module:%s",
@@ -2388,9 +2390,9 @@ static void goodix_ts_suspend_work(struct work_struct *work)
 }
 #if IS_ENABLED(CONFIG_MI_DISP_NOTIFIER)
 int goodix_drm_state_change_callback(struct notifier_block *self,
-		unsigned long event, void *data)
+				     unsigned long event, void *data)
 {
-		struct goodix_ts_core *core_data =
+	struct goodix_ts_core *core_data =
 		container_of(self, struct goodix_ts_core, notifier);
 	struct mi_disp_notifier *evdata = data;
 	int blank;
@@ -2399,18 +2401,24 @@ int goodix_drm_state_change_callback(struct notifier_block *self,
 		blank = *(int *)(evdata->data);
 		ts_info("notifier tp event:%d, code:%d.", event, blank);
 		flush_workqueue(core_data->event_wq);
-		if ((event == MI_DISP_DPMS_EARLY_EVENT || event == MI_DISP_DPMS_EVENT)
-			&& (blank == MI_DISP_DPMS_POWERDOWN || blank == MI_DISP_DPMS_LP1 || blank == MI_DISP_DPMS_LP2)) {
-			ts_info("touchpanel suspend by %s", blank ==  MI_DISP_DPMS_POWERDOWN ? "blank" : "doze");
-			queue_work(core_data->event_wq, &core_data->suspend_work);
-		} else if (event == MI_DISP_DPMS_EVENT && blank == MI_DISP_DPMS_ON) {
+		if ((event == MI_DISP_DPMS_EARLY_EVENT ||
+		     event == MI_DISP_DPMS_EVENT) &&
+		    (blank == MI_DISP_DPMS_POWERDOWN ||
+		     blank == MI_DISP_DPMS_LP1 || blank == MI_DISP_DPMS_LP2)) {
+			ts_info("touchpanel suspend by %s",
+				blank == MI_DISP_DPMS_POWERDOWN ? "blank" :
+								  "doze");
+			queue_work(core_data->event_wq,
+				   &core_data->suspend_work);
+		} else if (event == MI_DISP_DPMS_EVENT &&
+			   blank == MI_DISP_DPMS_ON) {
 			ts_info("touchpanel resume");
-			queue_work(core_data->event_wq, &core_data->resume_work);
+			queue_work(core_data->event_wq,
+				   &core_data->resume_work);
 		}
 	}
 
 	return 0;
-
 }
 #endif
 
@@ -2420,7 +2428,7 @@ int goodix_drm_state_change_callback(struct notifier_block *self,
  * Called by kernel during framebuffer blanck/unblank phrase
  */
 int goodix_ts_fb_notifier_callback(struct notifier_block *self,
-	unsigned long event, void *data)
+				   unsigned long event, void *data)
 {
 	struct goodix_ts_core *core_data =
 		container_of(self, struct goodix_ts_core, fb_notifier);
@@ -2442,7 +2450,6 @@ int goodix_ts_fb_notifier_callback(struct notifier_block *self,
 }
 #endif
 
-
 #ifdef CONFIG_PM
 /**
  * goodix_ts_pm_suspend - PM suspend function
@@ -2450,8 +2457,7 @@ int goodix_ts_fb_notifier_callback(struct notifier_block *self,
  */
 static int goodix_ts_pm_suspend(struct device *dev)
 {
-	struct goodix_ts_core *core_data =
-		dev_get_drvdata(dev);
+	struct goodix_ts_core *core_data = dev_get_drvdata(dev);
 
 	ts_info("%s enter", __func__);
 
@@ -2468,8 +2474,7 @@ static int goodix_ts_pm_suspend(struct device *dev)
  */
 static int goodix_ts_pm_resume(struct device *dev)
 {
-	struct goodix_ts_core *core_data =
-		dev_get_drvdata(dev);
+	struct goodix_ts_core *core_data = dev_get_drvdata(dev);
 	ts_info("%s enter.", __func__);
 
 	if (device_may_wakeup(dev) && core_data->gesture_enabled) {
@@ -2486,10 +2491,10 @@ static int goodix_ts_pm_resume(struct device *dev)
  *  for goodix touch notification event.
  */
 static int goodix_generic_noti_callback(struct notifier_block *self,
-		unsigned long action, void *data)
+					unsigned long action, void *data)
 {
-	struct goodix_ts_core *cd = container_of(self,
-			struct goodix_ts_core, ts_notifier);
+	struct goodix_ts_core *cd =
+		container_of(self, struct goodix_ts_core, ts_notifier);
 	const struct goodix_ts_hw_ops *hw_ops = cd->hw_ops;
 
 	if (cd->init_stage < CORE_INIT_STAGE2)
@@ -2526,7 +2531,8 @@ static int goodix_get_charging_status(void)
 
 	dc_psy = power_supply_get_by_name("wireless");
 	if (dc_psy) {
-		rc = power_supply_get_property(dc_psy, POWER_SUPPLY_PROP_ONLINE, &val);
+		rc = power_supply_get_property(dc_psy, POWER_SUPPLY_PROP_ONLINE,
+					       &val);
 		if (rc < 0)
 			ts_err("Couldn't get DC online status, rc=%d\n", rc);
 		else if (val.intval == 1)
@@ -2535,7 +2541,8 @@ static int goodix_get_charging_status(void)
 
 	usb_psy = power_supply_get_by_name("usb");
 	if (usb_psy) {
-		rc = power_supply_get_property(usb_psy, POWER_SUPPLY_PROP_ONLINE, &val);
+		rc = power_supply_get_property(usb_psy,
+					       POWER_SUPPLY_PROP_ONLINE, &val);
 		if (rc < 0)
 			ts_err("Couldn't get usb online status, rc=%d\n", rc);
 		else if (val.intval == 1)
@@ -2558,7 +2565,8 @@ static void charger_power_supply_work(struct work_struct *work)
 	}
 	charge_status = !!goodix_get_charging_status();
 	ts_debug("power supply changed,Power_supply_event:%d", charge_status);
-	if (charge_status != core_data->charger_status || core_data->charger_status < 0) {
+	if (charge_status != core_data->charger_status ||
+	    core_data->charger_status < 0) {
 		core_data->charger_status = charge_status;
 		ts_info("charger status change, status is %d", charge_status);
 		if (atomic_read(&core_data->suspended))
@@ -2570,13 +2578,14 @@ static void charger_power_supply_work(struct work_struct *work)
 			hw_ops->charger_on(core_data, false);
 		}
 	}
-
 }
 
-static int charger_status_event_callback(struct notifier_block *nb, unsigned long event, void *ptr)
+static int charger_status_event_callback(struct notifier_block *nb,
+					 unsigned long event, void *ptr)
 {
-	struct goodix_ts_core *core_data = container_of(nb, struct goodix_ts_core, charger_notifier);
-	if(!core_data)
+	struct goodix_ts_core *core_data =
+		container_of(nb, struct goodix_ts_core, charger_notifier);
+	if (!core_data)
 		return 0;
 
 	queue_work(core_data->event_wq, &core_data->power_supply_work);
@@ -2611,15 +2620,17 @@ int goodix_ts_stage2_init(struct goodix_ts_core *cd)
 	}
 	ts_info("success register irq");
 
-	cd->event_wq = alloc_workqueue("gtp-event-queue",
-					WQ_UNBOUND | WQ_HIGHPRI | WQ_CPU_INTENSIVE, 1);
+	cd->event_wq =
+		alloc_workqueue("gtp-event-queue",
+				WQ_UNBOUND | WQ_HIGHPRI | WQ_CPU_INTENSIVE, 1);
 	if (!cd->event_wq) {
 		ts_err("goodix cannot create event work thread");
 		ret = -ENOMEM;
 		goto exit;
 	}
-	cd->gesture_wq = alloc_workqueue("gtp-gesture-queue",
-					WQ_UNBOUND | WQ_HIGHPRI | WQ_CPU_INTENSIVE, 1);
+	cd->gesture_wq =
+		alloc_workqueue("gtp-gesture-queue",
+				WQ_UNBOUND | WQ_HIGHPRI | WQ_CPU_INTENSIVE, 1);
 	if (!cd->gesture_wq) {
 		ts_err("goodix cannot create gesture work thread");
 		ret = -ENOMEM;
@@ -2651,11 +2662,10 @@ int goodix_ts_stage2_init(struct goodix_ts_core *cd)
 	}
 #endif
 
-
 	/* register charger status change notifier */
 	INIT_WORK(&cd->power_supply_work, charger_power_supply_work);
 	cd->charger_notifier.notifier_call = charger_status_event_callback;
-	if(power_supply_reg_notifier(&cd->charger_notifier))
+	if (power_supply_reg_notifier(&cd->charger_notifier))
 		ts_err("failed to register charger notifier client");
 
 	/* get ts lockdown info */
@@ -2719,20 +2729,25 @@ static int goodix_send_ic_config(struct goodix_ts_core *cd, int type)
 
 #define LOCKDOWN_INFO_ADDR 0x10030
 /* use different lockdown infomation to compatible ic */
-static unsigned char panel_lockdown[8] = {0x53, 0x42, 0x32, 0x01, 0x4C, 0x0C, 0x31, 0x01};
+static unsigned char panel_lockdown[8] = { 0x53, 0x42, 0x32, 0x01,
+					   0x4C, 0x0C, 0x31, 0x01 };
 static int goodix_match_panel(struct goodix_ts_core *cd)
 {
 	unsigned char buf[8];
 	int ret;
 	char name_buf[GOODIX_MAX_STR_LABLE_LEN];
 
-	snprintf(name_buf, GOODIX_MAX_STR_LABLE_LEN, "%s.bin", cd->board_data.cfg_bin);
-	strncpy(cd->board_data.cfg_bin_name, name_buf, GOODIX_MAX_STR_LABLE_LEN);
+	snprintf(name_buf, GOODIX_MAX_STR_LABLE_LEN, "%s.bin",
+		 cd->board_data.cfg_bin);
+	strncpy(cd->board_data.cfg_bin_name, name_buf,
+		GOODIX_MAX_STR_LABLE_LEN);
 
-	snprintf(name_buf, GOODIX_MAX_STR_LABLE_LEN, "%s.bin", cd->board_data.fw);
+	snprintf(name_buf, GOODIX_MAX_STR_LABLE_LEN, "%s.bin",
+		 cd->board_data.fw);
 	strncpy(cd->board_data.fw_name, name_buf, GOODIX_MAX_STR_LABLE_LEN);
 
-	strncpy(cd->board_data.limit_csv_name, TS_DEFAULT_LIMIT_CSV, GOODIX_MAX_STR_LABLE_LEN);
+	strncpy(cd->board_data.limit_csv_name, TS_DEFAULT_LIMIT_CSV,
+		GOODIX_MAX_STR_LABLE_LEN);
 	ret = cd->hw_ops->read(cd, LOCKDOWN_INFO_ADDR, buf, sizeof(buf));
 	if (ret < 0) {
 		ts_err("read lockdown info failed");
@@ -2742,11 +2757,16 @@ static int goodix_match_panel(struct goodix_ts_core *cd)
 	ret = memcmp(&buf, &panel_lockdown, (int)sizeof(buf));
 	if (ret == 0) {
 		ts_info("match panel 1");
-		snprintf(name_buf, GOODIX_MAX_STR_LABLE_LEN, "%s_new.bin", cd->board_data.cfg_bin);
-		strncpy(cd->board_data.cfg_bin_name, name_buf, GOODIX_MAX_STR_LABLE_LEN);
-		snprintf(name_buf, GOODIX_MAX_STR_LABLE_LEN, "%s_new.bin", cd->board_data.fw );
-		strncpy(cd->board_data.fw_name, name_buf, GOODIX_MAX_STR_LABLE_LEN);
-		strncpy(cd->board_data.limit_csv_name, TS_DEFAULT_LIMIT_CSV_1, GOODIX_MAX_STR_LABLE_LEN);
+		snprintf(name_buf, GOODIX_MAX_STR_LABLE_LEN, "%s_new.bin",
+			 cd->board_data.cfg_bin);
+		strncpy(cd->board_data.cfg_bin_name, name_buf,
+			GOODIX_MAX_STR_LABLE_LEN);
+		snprintf(name_buf, GOODIX_MAX_STR_LABLE_LEN, "%s_new.bin",
+			 cd->board_data.fw);
+		strncpy(cd->board_data.fw_name, name_buf,
+			GOODIX_MAX_STR_LABLE_LEN);
+		strncpy(cd->board_data.limit_csv_name, TS_DEFAULT_LIMIT_CSV_1,
+			GOODIX_MAX_STR_LABLE_LEN);
 
 		return 0;
 	} else {
@@ -2757,7 +2777,7 @@ static int goodix_match_panel(struct goodix_ts_core *cd)
 }
 
 static ssize_t goodix_lockdown_info_read(struct file *file, char __user *buf,
-							 size_t count, loff_t *pos)
+					 size_t count, loff_t *pos)
 {
 	int cnt = 0, ret = 0;
 #define TP_INFO_MAX_LENGTH 50
@@ -2766,12 +2786,17 @@ static ssize_t goodix_lockdown_info_read(struct file *file, char __user *buf,
 	if (*pos != 0 || !goodix_core_data)
 		return 0;
 
-	cnt = snprintf(tmp, TP_INFO_MAX_LENGTH,
-			"0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x\n",
-			goodix_core_data->lockdown_info[0], goodix_core_data->lockdown_info[1],
-			goodix_core_data->lockdown_info[2], goodix_core_data->lockdown_info[3],
-			goodix_core_data->lockdown_info[4], goodix_core_data->lockdown_info[5],
-			goodix_core_data->lockdown_info[6], goodix_core_data->lockdown_info[7]);
+	cnt = snprintf(
+		tmp, TP_INFO_MAX_LENGTH,
+		"0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x\n",
+		goodix_core_data->lockdown_info[0],
+		goodix_core_data->lockdown_info[1],
+		goodix_core_data->lockdown_info[2],
+		goodix_core_data->lockdown_info[3],
+		goodix_core_data->lockdown_info[4],
+		goodix_core_data->lockdown_info[5],
+		goodix_core_data->lockdown_info[6],
+		goodix_core_data->lockdown_info[7]);
 
 	ret = copy_to_user(buf, tmp, cnt);
 	*pos += cnt;
@@ -2784,11 +2809,11 @@ static const struct proc_ops goodix_lockdown_info_ops = {
 	.proc_read = goodix_lockdown_info_read,
 };
 static ssize_t goodix_fw_version_info_read(struct file *file, char __user *buf,
-		size_t count, loff_t *pos)
+					   size_t count, loff_t *pos)
 {
 	struct goodix_ts_hw_ops *hw_ops = goodix_core_data->hw_ops;
 	struct goodix_fw_version chip_ver;
-	char k_buf[100] = {0};
+	char k_buf[100] = { 0 };
 	int ret = 0;
 	int cnt = 0;
 
@@ -2798,20 +2823,24 @@ static ssize_t goodix_fw_version_info_read(struct file *file, char __user *buf,
 		ret = hw_ops->read_version(goodix_core_data, &chip_ver);
 		if (!ret) {
 			cnt = snprintf(&k_buf[0], sizeof(k_buf),
-					"patch_pid:%s\n",
-					chip_ver.patch_pid);
+				       "patch_pid:%s\n", chip_ver.patch_pid);
 			cnt += snprintf(&k_buf[cnt], sizeof(k_buf),
 					"patch_vid:%02x%02x%02x%02x\n",
-					chip_ver.patch_vid[0], chip_ver.patch_vid[1],
-					chip_ver.patch_vid[2], chip_ver.patch_vid[3]);
+					chip_ver.patch_vid[0],
+					chip_ver.patch_vid[1],
+					chip_ver.patch_vid[2],
+					chip_ver.patch_vid[3]);
 		}
 	}
 
 	if (hw_ops->get_ic_info) {
-		ret = hw_ops->get_ic_info(goodix_core_data, &goodix_core_data->ic_info);
+		ret = hw_ops->get_ic_info(goodix_core_data,
+					  &goodix_core_data->ic_info);
 		if (!ret) {
 			cnt += snprintf(&k_buf[cnt], sizeof(k_buf),
-					"config_version:%x\n", goodix_core_data->ic_info.version.config_version);
+					"config_version:%x\n",
+					goodix_core_data->ic_info.version
+						.config_version);
 		}
 	}
 	cnt = cnt > count ? count : cnt;
@@ -2826,9 +2855,8 @@ static const struct proc_ops goodix_fw_version_info_ops = {
 	.proc_read = goodix_fw_version_info_read,
 };
 
-
 static ssize_t goodix_selftest_read(struct file *file, char __user *buf,
-		size_t count, loff_t *pos)
+				    size_t count, loff_t *pos)
 {
 	char tmp[5] = { 0 };
 	int cnt;
@@ -2836,7 +2864,7 @@ static ssize_t goodix_selftest_read(struct file *file, char __user *buf,
 	if (*pos != 0 || !goodix_core_data)
 		return 0;
 	cnt = snprintf(tmp, sizeof(goodix_core_data->result_type), "%d\n",
-			goodix_core_data->result_type);
+		       goodix_core_data->result_type);
 	if (copy_to_user(buf, tmp, strlen(tmp))) {
 		return -EFAULT;
 	}
@@ -2883,7 +2911,7 @@ static void goodix_selftest_work(struct work_struct *work)
 	wake_up_interruptible(&goodix_core_data->selftest_wait_queue);
 }
 static ssize_t goodix_selftest_write(struct file *file, const char __user *buf,
-		size_t count, loff_t *pos)
+				     size_t count, loff_t *pos)
 {
 	struct goodix_fw_version chip_ver;
 	struct goodix_ts_hw_ops *hw_ops;
@@ -2901,8 +2929,10 @@ static ssize_t goodix_selftest_write(struct file *file, const char __user *buf,
 
 	if (!strncmp("short", tmp, 5) || !strncmp("open", tmp, 4)) {
 		goodix_core_data->selftest_ready = false;
-		queue_work(goodix_core_data->selftest_wq, &goodix_core_data->selftest_work);
-		wait_event_interruptible(goodix_core_data->selftest_wait_queue, goodix_core_data->selftest_ready);
+		queue_work(goodix_core_data->selftest_wq,
+			   &goodix_core_data->selftest_work);
+		wait_event_interruptible(goodix_core_data->selftest_wait_queue,
+					 goodix_core_data->selftest_ready);
 	} else if (!strncmp("i2c", tmp, 3)) {
 		hw_ops->read_version(goodix_core_data, &chip_ver);
 		if (chip_ver.sensor_id == 255)
@@ -2929,8 +2959,9 @@ static const struct proc_ops goodix_selftest_ops = {
  *	0x02	Enter active mode
 */
 #define GOODIX_STATUS_CMD 0x9F
-static ssize_t goodix_tp_set_active_write(struct file *file, const char __user *buf,
-		size_t count, loff_t *pos)
+static ssize_t goodix_tp_set_active_write(struct file *file,
+					  const char __user *buf, size_t count,
+					  loff_t *pos)
 {
 	struct goodix_ts_hw_ops *hw_ops;
 	struct goodix_ts_cmd cmd;
@@ -2990,18 +3021,18 @@ int goodix_ts_get_lockdown_info(struct goodix_ts_core *cd)
 	int ret = 0;
 	struct goodix_ts_hw_ops *hw_ops = cd->hw_ops;
 
-	ret = hw_ops->read(cd, TS_LOCKDOWN_REG,
-				cd->lockdown_info, GOODIX_LOCKDOWN_SIZE);
+	ret = hw_ops->read(cd, TS_LOCKDOWN_REG, cd->lockdown_info,
+			   GOODIX_LOCKDOWN_SIZE);
 	if (ret) {
 		ts_err("can't get lockdown");
 		return -EINVAL;
 	}
 
 	ts_info("lockdown is:0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x,0x%02x",
-			cd->lockdown_info[0], cd->lockdown_info[1],
-			cd->lockdown_info[2], cd->lockdown_info[3],
-			cd->lockdown_info[4], cd->lockdown_info[5],
-			cd->lockdown_info[6], cd->lockdown_info[7]);
+		cd->lockdown_info[0], cd->lockdown_info[1],
+		cd->lockdown_info[2], cd->lockdown_info[3],
+		cd->lockdown_info[4], cd->lockdown_info[5],
+		cd->lockdown_info[6], cd->lockdown_info[7]);
 	return 0;
 }
 #ifdef GOODIX_XIAOMI_TOUCHFEATURE
@@ -3042,10 +3073,11 @@ static void goodix_set_gesture_work(struct work_struct *work)
 		if (core_data->double_wakeup)
 			gesture_type |= DOUBLE_TAP_EN;
 
-		if (core_data->fod_status == 1 || core_data->fod_status == 2
-			|| core_data->fod_status == 3) {
+		if (core_data->fod_status == 1 || core_data->fod_status == 2 ||
+		    core_data->fod_status == 3) {
 			gesture_type |= FOD_EN;
-			if (core_data->fod_icon_status && !core_data->nonui_status)
+			if (core_data->fod_icon_status &&
+			    !core_data->nonui_status)
 				gesture_type |= SINGLE_TAP_EN;
 		}
 	}
@@ -3057,11 +3089,11 @@ static void goodix_set_gesture_work(struct work_struct *work)
 		if (core_data->fod_finger)
 			goto out;
 
-		if (core_data->work_status == TP_SLEEP && core_data->gesture_enabled)
+		if (core_data->work_status == TP_SLEEP &&
+		    core_data->gesture_enabled)
 			goodix_sleep_to_gesture(core_data);
 		else
 			hw_ops->gesture(core_data, core_data->gesture_enabled);
-
 	}
 
 out:
@@ -3087,21 +3119,21 @@ static void goodix_set_game_work(struct work_struct *work)
 	}
 
 	mutex_lock(&goodix_core_data->core_mutex);
-	for (i = 0; i <=Touch_Panel_Orientation; i++) {
+	for (i = 0; i <= Touch_Panel_Orientation; i++) {
 		if (xiaomi_touch_interfaces.touch_mode[i][GET_CUR_VALUE] !=
-			xiaomi_touch_interfaces.touch_mode[i][SET_CUR_VALUE]) {
-
+		    xiaomi_touch_interfaces.touch_mode[i][SET_CUR_VALUE]) {
 			update = true;
 			if (Touch_Expert_Mode == i)
 				export = true;
-			else if ((i == Touch_Tolerance)
-				|| (i == Touch_UP_THRESHOLD)
-				|| (i == Touch_Aim_Sensitivity)
-				|| (i == Touch_Tap_Stability))
+			else if ((i == Touch_Tolerance) ||
+				 (i == Touch_UP_THRESHOLD) ||
+				 (i == Touch_Aim_Sensitivity) ||
+				 (i == Touch_Tap_Stability))
 				export = false;
 
 			xiaomi_touch_interfaces.touch_mode[i][GET_CUR_VALUE] =
-				xiaomi_touch_interfaces.touch_mode[i][SET_CUR_VALUE];
+				xiaomi_touch_interfaces
+					.touch_mode[i][SET_CUR_VALUE];
 		}
 	}
 
@@ -3110,26 +3142,35 @@ static void goodix_set_game_work(struct work_struct *work)
 		return;
 	}
 
-	for (i = 0; i <=Touch_Panel_Orientation; i++) {
+	for (i = 0; i <= Touch_Panel_Orientation; i++) {
 		switch (i) {
 		case Touch_Game_Mode:
-			temp_value = xiaomi_touch_interfaces.touch_mode[Touch_Game_Mode][SET_CUR_VALUE];
+			temp_value = xiaomi_touch_interfaces
+					     .touch_mode[Touch_Game_Mode]
+							[SET_CUR_VALUE];
 			on = !!temp_value;
 			break;
 		case Touch_Active_MODE:
 			break;
 		case Touch_UP_THRESHOLD:
-			temp_value = xiaomi_touch_interfaces.touch_mode[Touch_UP_THRESHOLD][SET_CUR_VALUE];
+			temp_value = xiaomi_touch_interfaces
+					     .touch_mode[Touch_UP_THRESHOLD]
+							[SET_CUR_VALUE];
 			data0 &= 0xF8;
 			data0 |= temp_value;
 			break;
 		case Touch_Tolerance:
-			temp_value = xiaomi_touch_interfaces.touch_mode[Touch_Tolerance][SET_CUR_VALUE];
+			temp_value = xiaomi_touch_interfaces
+					     .touch_mode[Touch_Tolerance]
+							[SET_CUR_VALUE];
 			data0 &= 0xC7;
 			data0 |= (temp_value << 3);
 			break;
 		case Touch_Panel_Orientation:
-			temp_value = xiaomi_touch_interfaces.touch_mode[Touch_Panel_Orientation][SET_CUR_VALUE];
+			temp_value =
+				xiaomi_touch_interfaces
+					.touch_mode[Touch_Panel_Orientation]
+						   [SET_CUR_VALUE];
 			if (PANEL_ORIENTATION_DEGREE_90 == temp_value)
 				temp_value = 1;
 			else if (PANEL_ORIENTATION_DEGREE_270 == temp_value)
@@ -3140,22 +3181,30 @@ static void goodix_set_game_work(struct work_struct *work)
 			data0 |= (temp_value << 6);
 			break;
 		case Touch_Aim_Sensitivity:
-			temp_value = xiaomi_touch_interfaces.touch_mode[Touch_Aim_Sensitivity][SET_CUR_VALUE];
+			temp_value = xiaomi_touch_interfaces
+					     .touch_mode[Touch_Aim_Sensitivity]
+							[SET_CUR_VALUE];
 			data1 &= 0xC7;
 			data1 |= (temp_value << 3);
 			break;
 		case Touch_Tap_Stability:
-			temp_value = xiaomi_touch_interfaces.touch_mode[Touch_Tap_Stability][SET_CUR_VALUE];
+			temp_value = xiaomi_touch_interfaces
+					     .touch_mode[Touch_Tap_Stability]
+							[SET_CUR_VALUE];
 			data1 &= 0xF8;
 			data1 |= temp_value;
 			break;
 		case Touch_Edge_Filter:
-			temp_value = xiaomi_touch_interfaces.touch_mode[Touch_Edge_Filter][SET_CUR_VALUE];
+			temp_value = xiaomi_touch_interfaces
+					     .touch_mode[Touch_Edge_Filter]
+							[SET_CUR_VALUE];
 			data1 &= 0x3F;
 			data1 |= (temp_value << 6);
 			break;
 		case Touch_Expert_Mode:
-			temp_value = xiaomi_touch_interfaces.touch_mode[Touch_Expert_Mode][SET_CUR_VALUE];
+			temp_value = xiaomi_touch_interfaces
+					     .touch_mode[Touch_Expert_Mode]
+							[SET_CUR_VALUE];
 			temp_value = temp_value - 1;
 			if (export) {
 				ts_info("Set export config.");
@@ -3164,16 +3213,35 @@ static void goodix_set_game_work(struct work_struct *work)
 				data1 &= 0xC7;
 				data1 &= 0xF8;
 
-				data0 |= (u8)(goodix_core_data->board_data.touch_expert_array[temp_value * GAME_ARRAY_LEN] << 3);
-				data0 |= (u8)goodix_core_data->board_data.touch_expert_array[temp_value * GAME_ARRAY_LEN + 1];
-				data1 |= (u8)(goodix_core_data->board_data.touch_expert_array[temp_value * GAME_ARRAY_LEN + 2] << 3);
-				data1 |= (u8)goodix_core_data->board_data.touch_expert_array[temp_value * GAME_ARRAY_LEN + 3];
+				data0 |= (u8)(goodix_core_data->board_data
+						      .touch_expert_array
+							      [temp_value *
+							       GAME_ARRAY_LEN]
+					      << 3);
+				data0 |=
+					(u8)goodix_core_data->board_data
+						.touch_expert_array
+							[temp_value *
+								 GAME_ARRAY_LEN +
+							 1];
+				data1 |=
+					(u8)(goodix_core_data->board_data
+						     .touch_expert_array
+							     [temp_value *
+								      GAME_ARRAY_LEN +
+							      2]
+					     << 3);
+				data1 |=
+					(u8)goodix_core_data->board_data
+						.touch_expert_array
+							[temp_value *
+								 GAME_ARRAY_LEN +
+							 3];
 			}
 			break;
 		default:
 			/* Don't support */
 			break;
-
 		};
 	}
 
@@ -3205,41 +3273,53 @@ static int goodix_set_cur_value(int gtp_mode, int gtp_value)
 {
 	int ret = 0;
 	ts_info("mode:%d, value:%d", gtp_mode, gtp_value);
-	if (!goodix_core_data || goodix_core_data->init_stage != CORE_INIT_STAGE2) {
+	if (!goodix_core_data ||
+	    goodix_core_data->init_stage != CORE_INIT_STAGE2) {
 		ts_err("initialization not completed, return");
 		return 0;
 	}
-	if (gtp_mode == Touch_Doubletap_Mode && goodix_core_data && gtp_value >= 0) {
+	if (gtp_mode == Touch_Doubletap_Mode && goodix_core_data &&
+	    gtp_value >= 0) {
 		goodix_core_data->double_wakeup = gtp_value;
-		queue_work(goodix_core_data->gesture_wq, &goodix_core_data->gesture_work);
+		queue_work(goodix_core_data->gesture_wq,
+			   &goodix_core_data->gesture_work);
 		return 0;
 	}
-	if (gtp_mode == Touch_Aod_Enable && goodix_core_data && gtp_value >= 0) {
+	if (gtp_mode == Touch_Aod_Enable && goodix_core_data &&
+	    gtp_value >= 0) {
 		goodix_core_data->aod_status = gtp_value;
-		queue_work(goodix_core_data->gesture_wq, &goodix_core_data->gesture_work);
+		queue_work(goodix_core_data->gesture_wq,
+			   &goodix_core_data->gesture_work);
 		return 0;
 	}
-	if (gtp_mode ==  Touch_Fod_Enable && goodix_core_data && gtp_value >= 0) {
+	if (gtp_mode == Touch_Fod_Enable && goodix_core_data &&
+	    gtp_value >= 0) {
 		goodix_core_data->fod_status = gtp_value;
-		ts_info("Touch_Fod_Enable value [%d]",gtp_value );
-		queue_work(goodix_core_data->gesture_wq, &goodix_core_data->gesture_work);
+		ts_info("Touch_Fod_Enable value [%d]", gtp_value);
+		queue_work(goodix_core_data->gesture_wq,
+			   &goodix_core_data->gesture_work);
 		return 0;
 	}
-	if (gtp_mode ==  Touch_FodIcon_Enable && goodix_core_data && gtp_value >= 0) {
+	if (gtp_mode == Touch_FodIcon_Enable && goodix_core_data &&
+	    gtp_value >= 0) {
 		goodix_core_data->fod_icon_status = gtp_value;
-		ts_info("Touch_FodIcon_Enable value [%d]",gtp_value );
-		queue_work(goodix_core_data->gesture_wq, &goodix_core_data->gesture_work);
+		ts_info("Touch_FodIcon_Enable value [%d]", gtp_value);
+		queue_work(goodix_core_data->gesture_wq,
+			   &goodix_core_data->gesture_work);
 		return 0;
 	}
 
-	if (gtp_mode ==  Touch_Nonui_Mode && goodix_core_data && gtp_value >= 0) {
+	if (gtp_mode == Touch_Nonui_Mode && goodix_core_data &&
+	    gtp_value >= 0) {
 		goodix_core_data->nonui_status = gtp_value;
-		ts_info("Touch_Nonui_Mode value [%d]",gtp_value );
-		queue_work(goodix_core_data->gesture_wq, &goodix_core_data->gesture_work);
+		ts_info("Touch_Nonui_Mode value [%d]", gtp_value);
+		queue_work(goodix_core_data->gesture_wq,
+			   &goodix_core_data->gesture_work);
 		return 0;
 	}
 
-	if (gtp_mode == Touch_Power_Status && goodix_core_data && gtp_value >= 0) {
+	if (gtp_mode == Touch_Power_Status && goodix_core_data &&
+	    gtp_value >= 0) {
 		goodix_core_data->power_status = gtp_value;
 		goodix_power_status_handle(goodix_core_data);
 		return 0;
@@ -3252,26 +3332,26 @@ static int goodix_set_cur_value(int gtp_mode, int gtp_value)
 
 	xiaomi_touch_interfaces.touch_mode[gtp_mode][SET_CUR_VALUE] = gtp_value;
 	if (xiaomi_touch_interfaces.touch_mode[gtp_mode][SET_CUR_VALUE] >
-			xiaomi_touch_interfaces.touch_mode[gtp_mode][GET_MAX_VALUE]) {
-
+	    xiaomi_touch_interfaces.touch_mode[gtp_mode][GET_MAX_VALUE]) {
 		xiaomi_touch_interfaces.touch_mode[gtp_mode][SET_CUR_VALUE] =
-			xiaomi_touch_interfaces.touch_mode[gtp_mode][GET_MAX_VALUE];
+			xiaomi_touch_interfaces
+				.touch_mode[gtp_mode][GET_MAX_VALUE];
 
 	} else if (xiaomi_touch_interfaces.touch_mode[gtp_mode][SET_CUR_VALUE] <
-			xiaomi_touch_interfaces.touch_mode[gtp_mode][GET_MIN_VALUE]) {
-
+		   xiaomi_touch_interfaces.touch_mode[gtp_mode][GET_MIN_VALUE]) {
 		xiaomi_touch_interfaces.touch_mode[gtp_mode][SET_CUR_VALUE] =
-			xiaomi_touch_interfaces.touch_mode[gtp_mode][GET_MIN_VALUE];
+			xiaomi_touch_interfaces
+				.touch_mode[gtp_mode][GET_MIN_VALUE];
 	}
 
-
-
-
-	if (gtp_mode <= Touch_Panel_Orientation)/*power state no need call game work*/
-		queue_work(goodix_core_data->game_wq, &goodix_core_data->game_work);
+	if (gtp_mode <=
+	    Touch_Panel_Orientation) /*power state no need call game work*/
+		queue_work(goodix_core_data->game_wq,
+			   &goodix_core_data->game_work);
 	else
 		xiaomi_touch_interfaces.touch_mode[gtp_mode][GET_CUR_VALUE] =
-			xiaomi_touch_interfaces.touch_mode[gtp_mode][SET_CUR_VALUE];
+			xiaomi_touch_interfaces
+				.touch_mode[gtp_mode][SET_CUR_VALUE];
 
 	return ret;
 }
@@ -3291,14 +3371,19 @@ static int goodix_get_mode_value(int mode, int value_type)
 static int goodix_get_mode_all(int mode, int *value)
 {
 	if (mode < Touch_Mode_NUM && mode >= 0) {
-		value[0] = xiaomi_touch_interfaces.touch_mode[mode][GET_CUR_VALUE];
-		value[1] = xiaomi_touch_interfaces.touch_mode[mode][GET_DEF_VALUE];
-		value[2] = xiaomi_touch_interfaces.touch_mode[mode][GET_MIN_VALUE];
-		value[3] = xiaomi_touch_interfaces.touch_mode[mode][GET_MAX_VALUE];
+		value[0] =
+			xiaomi_touch_interfaces.touch_mode[mode][GET_CUR_VALUE];
+		value[1] =
+			xiaomi_touch_interfaces.touch_mode[mode][GET_DEF_VALUE];
+		value[2] =
+			xiaomi_touch_interfaces.touch_mode[mode][GET_MIN_VALUE];
+		value[3] =
+			xiaomi_touch_interfaces.touch_mode[mode][GET_MAX_VALUE];
 	} else {
 		ts_err("don't support");
 	}
-	ts_info("mode:%d, value:%d:%d:%d:%d", mode, value[0], value[1], value[2], value[3]);
+	ts_info("mode:%d, value:%d:%d:%d:%d", mode, value[0], value[1],
+		value[2], value[3]);
 
 	return 0;
 }
@@ -3311,20 +3396,26 @@ static int goodix_reset_mode(int mode)
 	if (mode < Touch_Mode_NUM && mode > 0) {
 		xiaomi_touch_interfaces.touch_mode[mode][SET_CUR_VALUE] =
 			xiaomi_touch_interfaces.touch_mode[mode][GET_DEF_VALUE];
-		queue_work(goodix_core_data->game_wq, &goodix_core_data->game_work);
+		queue_work(goodix_core_data->game_wq,
+			   &goodix_core_data->game_work);
 	} else if (mode == 0) {
 		for (i = 0; i <= Touch_Panel_Orientation; i++) {
 			if (i == Touch_Panel_Orientation)
-				xiaomi_touch_interfaces.touch_mode[i][SET_CUR_VALUE] =
-					xiaomi_touch_interfaces.touch_mode[i][SET_CUR_VALUE];
+				xiaomi_touch_interfaces
+					.touch_mode[i][SET_CUR_VALUE] =
+					xiaomi_touch_interfaces
+						.touch_mode[i][SET_CUR_VALUE];
 			else {
-				xiaomi_touch_interfaces.touch_mode[i][SET_CUR_VALUE] =
-					xiaomi_touch_interfaces.touch_mode[i][GET_DEF_VALUE];
+				xiaomi_touch_interfaces
+					.touch_mode[i][SET_CUR_VALUE] =
+					xiaomi_touch_interfaces
+						.touch_mode[i][GET_DEF_VALUE];
 				/*xiaomi_touch_interfaces.touch_mode[i][GET_CUR_VALUE] =
 					xiaomi_touch_interfaces.touch_mode[i][SET_CUR_VALUE];*/
 			}
 		}
-		queue_work(goodix_core_data->game_wq, &goodix_core_data->game_work);
+		queue_work(goodix_core_data->game_wq,
+			   &goodix_core_data->game_work);
 	} else {
 		ts_err("don't support");
 	}
@@ -3344,73 +3435,111 @@ static void goodix_init_touchmode_data(void)
 	xiaomi_touch_interfaces.touch_mode[Touch_Game_Mode][GET_CUR_VALUE] = 0;
 
 	/* Acitve Mode */
-	xiaomi_touch_interfaces.touch_mode[Touch_Active_MODE][GET_MAX_VALUE] = 1;
-	xiaomi_touch_interfaces.touch_mode[Touch_Active_MODE][GET_MIN_VALUE] = 0;
-	xiaomi_touch_interfaces.touch_mode[Touch_Active_MODE][GET_DEF_VALUE] = 0;
-	xiaomi_touch_interfaces.touch_mode[Touch_Active_MODE][SET_CUR_VALUE] = 0;
-	xiaomi_touch_interfaces.touch_mode[Touch_Active_MODE][GET_CUR_VALUE] = 0;
+	xiaomi_touch_interfaces.touch_mode[Touch_Active_MODE][GET_MAX_VALUE] =
+		1;
+	xiaomi_touch_interfaces.touch_mode[Touch_Active_MODE][GET_MIN_VALUE] =
+		0;
+	xiaomi_touch_interfaces.touch_mode[Touch_Active_MODE][GET_DEF_VALUE] =
+		0;
+	xiaomi_touch_interfaces.touch_mode[Touch_Active_MODE][SET_CUR_VALUE] =
+		0;
+	xiaomi_touch_interfaces.touch_mode[Touch_Active_MODE][GET_CUR_VALUE] =
+		0;
 
 	/* tap sensitivity */
-	xiaomi_touch_interfaces.touch_mode[Touch_UP_THRESHOLD][GET_MAX_VALUE] = 4;
-	xiaomi_touch_interfaces.touch_mode[Touch_UP_THRESHOLD][GET_MIN_VALUE] = 0;
-	xiaomi_touch_interfaces.touch_mode[Touch_UP_THRESHOLD][GET_DEF_VALUE] = goodix_core_data->board_data.touch_expert_array[1];
-	xiaomi_touch_interfaces.touch_mode[Touch_UP_THRESHOLD][SET_CUR_VALUE] = goodix_core_data->board_data.touch_expert_array[1];
-	xiaomi_touch_interfaces.touch_mode[Touch_UP_THRESHOLD][GET_CUR_VALUE] = goodix_core_data->board_data.touch_expert_array[1];
+	xiaomi_touch_interfaces.touch_mode[Touch_UP_THRESHOLD][GET_MAX_VALUE] =
+		4;
+	xiaomi_touch_interfaces.touch_mode[Touch_UP_THRESHOLD][GET_MIN_VALUE] =
+		0;
+	xiaomi_touch_interfaces.touch_mode[Touch_UP_THRESHOLD][GET_DEF_VALUE] =
+		goodix_core_data->board_data.touch_expert_array[1];
+	xiaomi_touch_interfaces.touch_mode[Touch_UP_THRESHOLD][SET_CUR_VALUE] =
+		goodix_core_data->board_data.touch_expert_array[1];
+	xiaomi_touch_interfaces.touch_mode[Touch_UP_THRESHOLD][GET_CUR_VALUE] =
+		goodix_core_data->board_data.touch_expert_array[1];
 
 	/*  latency */
 	xiaomi_touch_interfaces.touch_mode[Touch_Tolerance][GET_MAX_VALUE] = 4;
 	xiaomi_touch_interfaces.touch_mode[Touch_Tolerance][GET_MIN_VALUE] = 0;
-	xiaomi_touch_interfaces.touch_mode[Touch_Tolerance][GET_DEF_VALUE] = goodix_core_data->board_data.touch_expert_array[0];
-	xiaomi_touch_interfaces.touch_mode[Touch_Tolerance][SET_CUR_VALUE] = goodix_core_data->board_data.touch_expert_array[0];
-	xiaomi_touch_interfaces.touch_mode[Touch_Tolerance][GET_CUR_VALUE] = goodix_core_data->board_data.touch_expert_array[0];
+	xiaomi_touch_interfaces.touch_mode[Touch_Tolerance][GET_DEF_VALUE] =
+		goodix_core_data->board_data.touch_expert_array[0];
+	xiaomi_touch_interfaces.touch_mode[Touch_Tolerance][SET_CUR_VALUE] =
+		goodix_core_data->board_data.touch_expert_array[0];
+	xiaomi_touch_interfaces.touch_mode[Touch_Tolerance][GET_CUR_VALUE] =
+		goodix_core_data->board_data.touch_expert_array[0];
 
 	/* aim sensitivity */
-	xiaomi_touch_interfaces.touch_mode[Touch_Aim_Sensitivity][GET_MAX_VALUE] = 4;
-	xiaomi_touch_interfaces.touch_mode[Touch_Aim_Sensitivity][GET_MIN_VALUE] = 0;
-	xiaomi_touch_interfaces.touch_mode[Touch_Aim_Sensitivity][GET_DEF_VALUE] = goodix_core_data->board_data.touch_expert_array[2];
-	xiaomi_touch_interfaces.touch_mode[Touch_Aim_Sensitivity][SET_CUR_VALUE] = goodix_core_data->board_data.touch_expert_array[2];
-	xiaomi_touch_interfaces.touch_mode[Touch_Aim_Sensitivity][GET_CUR_VALUE] = goodix_core_data->board_data.touch_expert_array[2];
+	xiaomi_touch_interfaces
+		.touch_mode[Touch_Aim_Sensitivity][GET_MAX_VALUE] = 4;
+	xiaomi_touch_interfaces
+		.touch_mode[Touch_Aim_Sensitivity][GET_MIN_VALUE] = 0;
+	xiaomi_touch_interfaces
+		.touch_mode[Touch_Aim_Sensitivity][GET_DEF_VALUE] =
+		goodix_core_data->board_data.touch_expert_array[2];
+	xiaomi_touch_interfaces
+		.touch_mode[Touch_Aim_Sensitivity][SET_CUR_VALUE] =
+		goodix_core_data->board_data.touch_expert_array[2];
+	xiaomi_touch_interfaces
+		.touch_mode[Touch_Aim_Sensitivity][GET_CUR_VALUE] =
+		goodix_core_data->board_data.touch_expert_array[2];
 	/* tap stability */
-	xiaomi_touch_interfaces.touch_mode[Touch_Tap_Stability][GET_MAX_VALUE] = 4;
-	xiaomi_touch_interfaces.touch_mode[Touch_Tap_Stability][GET_MIN_VALUE] = 0;
-	xiaomi_touch_interfaces.touch_mode[Touch_Tap_Stability][GET_DEF_VALUE] = goodix_core_data->board_data.touch_expert_array[3];
-	xiaomi_touch_interfaces.touch_mode[Touch_Tap_Stability][SET_CUR_VALUE] = goodix_core_data->board_data.touch_expert_array[3];
-	xiaomi_touch_interfaces.touch_mode[Touch_Tap_Stability][GET_CUR_VALUE] = goodix_core_data->board_data.touch_expert_array[3];
+	xiaomi_touch_interfaces.touch_mode[Touch_Tap_Stability][GET_MAX_VALUE] =
+		4;
+	xiaomi_touch_interfaces.touch_mode[Touch_Tap_Stability][GET_MIN_VALUE] =
+		0;
+	xiaomi_touch_interfaces.touch_mode[Touch_Tap_Stability][GET_DEF_VALUE] =
+		goodix_core_data->board_data.touch_expert_array[3];
+	xiaomi_touch_interfaces.touch_mode[Touch_Tap_Stability][SET_CUR_VALUE] =
+		goodix_core_data->board_data.touch_expert_array[3];
+	xiaomi_touch_interfaces.touch_mode[Touch_Tap_Stability][GET_CUR_VALUE] =
+		goodix_core_data->board_data.touch_expert_array[3];
 	/*	edge filter */
-	xiaomi_touch_interfaces.touch_mode[Touch_Edge_Filter][GET_MAX_VALUE] = 3;
-	xiaomi_touch_interfaces.touch_mode[Touch_Edge_Filter][GET_MIN_VALUE] = 0;
-	xiaomi_touch_interfaces.touch_mode[Touch_Edge_Filter][GET_DEF_VALUE] = 2;
-	xiaomi_touch_interfaces.touch_mode[Touch_Edge_Filter][SET_CUR_VALUE] = 2;
-	xiaomi_touch_interfaces.touch_mode[Touch_Edge_Filter][GET_CUR_VALUE] = 2;
-
+	xiaomi_touch_interfaces.touch_mode[Touch_Edge_Filter][GET_MAX_VALUE] =
+		3;
+	xiaomi_touch_interfaces.touch_mode[Touch_Edge_Filter][GET_MIN_VALUE] =
+		0;
+	xiaomi_touch_interfaces.touch_mode[Touch_Edge_Filter][GET_DEF_VALUE] =
+		2;
+	xiaomi_touch_interfaces.touch_mode[Touch_Edge_Filter][SET_CUR_VALUE] =
+		2;
+	xiaomi_touch_interfaces.touch_mode[Touch_Edge_Filter][GET_CUR_VALUE] =
+		2;
 
 	/*	Expert Mode */
-	xiaomi_touch_interfaces.touch_mode[Touch_Expert_Mode][GET_DEF_VALUE] = 1;
-	xiaomi_touch_interfaces.touch_mode[Touch_Expert_Mode][GET_CUR_VALUE] = 1;
-	xiaomi_touch_interfaces.touch_mode[Touch_Expert_Mode][SET_CUR_VALUE] = 1;
-	xiaomi_touch_interfaces.touch_mode[Touch_Expert_Mode][GET_MAX_VALUE] = GAME_ARRAY_SIZE;
-	xiaomi_touch_interfaces.touch_mode[Touch_Expert_Mode][GET_MIN_VALUE] = 1;
+	xiaomi_touch_interfaces.touch_mode[Touch_Expert_Mode][GET_DEF_VALUE] =
+		1;
+	xiaomi_touch_interfaces.touch_mode[Touch_Expert_Mode][GET_CUR_VALUE] =
+		1;
+	xiaomi_touch_interfaces.touch_mode[Touch_Expert_Mode][SET_CUR_VALUE] =
+		1;
+	xiaomi_touch_interfaces.touch_mode[Touch_Expert_Mode][GET_MAX_VALUE] =
+		GAME_ARRAY_SIZE;
+	xiaomi_touch_interfaces.touch_mode[Touch_Expert_Mode][GET_MIN_VALUE] =
+		1;
 
 	/*	Orientation */
-	xiaomi_touch_interfaces.touch_mode[Touch_Panel_Orientation][GET_MAX_VALUE] = 3;
-	xiaomi_touch_interfaces.touch_mode[Touch_Panel_Orientation][GET_MIN_VALUE] = 0;
-	xiaomi_touch_interfaces.touch_mode[Touch_Panel_Orientation][GET_DEF_VALUE] = 0;
-	xiaomi_touch_interfaces.touch_mode[Touch_Panel_Orientation][SET_CUR_VALUE] = 0;
-	xiaomi_touch_interfaces.touch_mode[Touch_Panel_Orientation][GET_CUR_VALUE] = 0;
+	xiaomi_touch_interfaces
+		.touch_mode[Touch_Panel_Orientation][GET_MAX_VALUE] = 3;
+	xiaomi_touch_interfaces
+		.touch_mode[Touch_Panel_Orientation][GET_MIN_VALUE] = 0;
+	xiaomi_touch_interfaces
+		.touch_mode[Touch_Panel_Orientation][GET_DEF_VALUE] = 0;
+	xiaomi_touch_interfaces
+		.touch_mode[Touch_Panel_Orientation][SET_CUR_VALUE] = 0;
+	xiaomi_touch_interfaces
+		.touch_mode[Touch_Panel_Orientation][GET_CUR_VALUE] = 0;
 
 	for (i = 0; i < Touch_Mode_NUM; i++) {
 		ts_info("mode:%d, set cur:%d, get cur:%d, def:%d min:%d max:%d\n",
-				i,
-				xiaomi_touch_interfaces.touch_mode[i][SET_CUR_VALUE],
-				xiaomi_touch_interfaces.touch_mode[i][GET_CUR_VALUE],
-				xiaomi_touch_interfaces.touch_mode[i][GET_DEF_VALUE],
-				xiaomi_touch_interfaces.touch_mode[i][GET_MIN_VALUE],
-				xiaomi_touch_interfaces.touch_mode[i][GET_MAX_VALUE]);
+			i, xiaomi_touch_interfaces.touch_mode[i][SET_CUR_VALUE],
+			xiaomi_touch_interfaces.touch_mode[i][GET_CUR_VALUE],
+			xiaomi_touch_interfaces.touch_mode[i][GET_DEF_VALUE],
+			xiaomi_touch_interfaces.touch_mode[i][GET_MIN_VALUE],
+			xiaomi_touch_interfaces.touch_mode[i][GET_MAX_VALUE]);
 	}
 
 	return;
 }
-
 
 static u8 goodix_panel_color_read(void)
 {
@@ -3478,7 +3607,7 @@ static int tpdbg_open(struct inode *inode, struct file *file)
 }
 
 static ssize_t tpdbg_read(struct file *file, char __user *buf, size_t size,
-		loff_t *ppos)
+			  loff_t *ppos)
 {
 	const char *str = "cmd support as below:\n \
 			   \necho \"irq-disable\" or \"irq-enable\" to ctrl irq\n \
@@ -3502,7 +3631,7 @@ static ssize_t tpdbg_read(struct file *file, char __user *buf, size_t size,
 }
 
 static ssize_t tpdbg_write(struct file *file, const char __user *buf,
-		size_t size, loff_t *ppos)
+			   size_t size, loff_t *ppos)
 {
 	struct goodix_ts_core *core_data = file->private_data;
 	struct goodix_ts_hw_ops *hw_ops = core_data->hw_ops;
@@ -3593,7 +3722,8 @@ upgrade:
 	}
 
 	ts_info("update flag: 0x%X", update_flag);
-	ret = goodix_do_fw_update(cd->ic_configs[CONFIG_TYPE_NORMAL],update_flag);
+	ret = goodix_do_fw_update(cd->ic_configs[CONFIG_TYPE_NORMAL],
+				  update_flag);
 	if (ret)
 		ts_err("failed do fw update");
 	/* setp3: get fw version and ic_info
@@ -3624,32 +3754,34 @@ upgrade:
 		goto uninit_fw;
 	}
 
-	cd->tp_lockdown_info_proc =
-	proc_create("tp_lockdown_info", 0664, NULL, &goodix_lockdown_info_ops);
-	cd->tp_fw_version_proc =
-		proc_create("tp_fw_version", 0664, NULL, &goodix_fw_version_info_ops);
+	cd->tp_lockdown_info_proc = proc_create("tp_lockdown_info", 0664, NULL,
+						&goodix_lockdown_info_ops);
+	cd->tp_fw_version_proc = proc_create("tp_fw_version", 0664, NULL,
+					     &goodix_fw_version_info_ops);
 	cd->tp_selftest_proc =
 		proc_create("tp_selftest", 0664, NULL, &goodix_selftest_ops);
-	cd->tp_always_active_proc =
-		proc_create("tp_always_active", 0222, NULL, &goodix_tp_active_ops);
+	cd->tp_always_active_proc = proc_create("tp_always_active", 0222, NULL,
+						&goodix_tp_active_ops);
 
 #ifdef GOODIX_DEBUGFS_ENABLE
 	cd->debugfs = debugfs_create_dir("tp_debug", NULL);
 	if (cd->debugfs) {
 		debugfs_create_file("switch_state", 0660, cd->debugfs, cd,
-					&tpdbg_operations);
+				    &tpdbg_operations);
 	}
 #endif
 
 #ifdef GOODIX_XIAOMI_TOUCHFEATURE
-	cd->game_wq = alloc_workqueue("gtp-game-queue",
+	cd->game_wq =
+		alloc_workqueue("gtp-game-queue",
 				WQ_UNBOUND | WQ_HIGHPRI | WQ_CPU_INTENSIVE, 1);
 	if (!cd->game_wq) {
 		ts_err("goodix cannot create game work thread");
 	}
 	INIT_WORK(&cd->game_work, goodix_set_game_work);
 
-	memset(&xiaomi_touch_interfaces, 0x00, sizeof(struct xiaomi_touch_interface));
+	memset(&xiaomi_touch_interfaces, 0x00,
+	       sizeof(struct xiaomi_touch_interface));
 	xiaomi_touch_interfaces.setModeValue = goodix_set_cur_value;
 	xiaomi_touch_interfaces.getModeValue = goodix_get_mode_value;
 	xiaomi_touch_interfaces.resetMode = goodix_reset_mode;
@@ -3660,7 +3792,7 @@ upgrade:
 	xiaomi_touch_interfaces.touch_vendor_read = goodix_touch_vendor_read;
 	xiaomi_touch_interfaces.palm_sensor_write = goodix_palm_sensor_write;
 
-	xiaomitouch_register_modedata(0,&xiaomi_touch_interfaces);
+	xiaomitouch_register_modedata(0, &xiaomi_touch_interfaces);
 	goodix_init_touchmode_data();
 #endif
 	cd->init_stage = CORE_INIT_STAGE2;
@@ -3699,8 +3831,8 @@ static int goodix_ts_probe(struct platform_device *pdev)
 		return -ENODEV;
 	}
 
-	core_data = devm_kzalloc(&pdev->dev,
-			sizeof(struct goodix_ts_core), GFP_KERNEL);
+	core_data = devm_kzalloc(&pdev->dev, sizeof(struct goodix_ts_core),
+				 GFP_KERNEL);
 	if (!core_data) {
 		ts_err("Failed to allocate memory for core data");
 		core_module_prob_sate = CORE_MODULE_PROB_FAILED;
@@ -3710,7 +3842,7 @@ static int goodix_ts_probe(struct platform_device *pdev)
 	if (IS_ENABLED(CONFIG_OF) && bus_interface->dev->of_node) {
 		/* parse devicetree property */
 		ret = goodix_parse_dt(bus_interface->dev->of_node,
-				&core_data->board_data);
+				      &core_data->board_data);
 		if (ret) {
 			ts_err("failed parse device info form dts, %d", ret);
 			return -EINVAL;
@@ -3751,16 +3883,16 @@ static int goodix_ts_probe(struct platform_device *pdev)
 	ret = goodix_ts_pinctrl_init(core_data);
 	if (!ret && core_data->pinctrl) {
 		ret = pinctrl_select_state(core_data->pinctrl,
-					core_data->pin_sta_active);
+					   core_data->pin_sta_active);
 		if (ret < 0)
 			ts_err("Failed to select active pinstate, r:%d", ret);
 
-		ret = pinctrl_select_state(core_data->pinctrl, core_data->pinctrl_state_spimode);
+		ret = pinctrl_select_state(core_data->pinctrl,
+					   core_data->pinctrl_state_spimode);
 		if (ret < 0) {
 			ts_err("Failed to select %s pinstate %d",
-				PINCTRL_STATE_SPIMODE, ret);
+			       PINCTRL_STATE_SPIMODE, ret);
 		}
-
 	}
 
 	ret = goodix_ts_power_on(core_data);
@@ -3804,10 +3936,10 @@ err_out:
 	core_data->init_stage = CORE_INIT_FAIL;
 	core_module_prob_sate = CORE_MODULE_PROB_FAILED;
 	if (core_data->pinctrl) {
-			pinctrl_select_state(core_data->pinctrl,
-					 core_data->pin_sta_suspend);
-			devm_pinctrl_put(core_data->pinctrl);
-		}
+		pinctrl_select_state(core_data->pinctrl,
+				     core_data->pin_sta_suspend);
+		devm_pinctrl_put(core_data->pinctrl);
+	}
 	core_data->pinctrl = NULL;
 	ts_err("goodix_ts_core failed, ret:%d", ret);
 	return ret;
@@ -3872,7 +4004,7 @@ static const struct dev_pm_ops dev_pm_ops = {
 #endif
 
 static const struct platform_device_id ts_core_ids[] = {
-	{.name = GOODIX_CORE_DRIVER_NAME},
+	{ .name = GOODIX_CORE_DRIVER_NAME },
 	{}
 };
 MODULE_DEVICE_TABLE(platform, ts_core_ids);

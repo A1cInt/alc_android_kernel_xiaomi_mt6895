@@ -28,32 +28,30 @@
 #include <linux/input/mt.h>
 #include "goodix_ts_core.h"
 
-#define GSX_GESTURE_TYPE_LEN			32
+#define GSX_GESTURE_TYPE_LEN 32
 #define TYPE_B_PROTOCOL
 
-#define GOODIX_GESTURE_DOUBLE_TAP		0xCC
-#define GOODIX_GESTURE_SINGLE_TAP		0x4C
-#define GOODIX_GESTURE_FOD_DOWN			0x46
-#define GOODIX_GESTURE_FOD_UP			0x55
+#define GOODIX_GESTURE_DOUBLE_TAP 0xCC
+#define GOODIX_GESTURE_SINGLE_TAP 0x4C
+#define GOODIX_GESTURE_FOD_DOWN 0x46
+#define GOODIX_GESTURE_FOD_UP 0x55
 
 static bool module_initialized;
 
+#define IRQ_EVENT_HEAD_LEN 8
+#define BYTES_PER_POINT 8
+#define COOR_DATA_CHECKSUM_SIZE 2
 
-#define IRQ_EVENT_HEAD_LEN			8
-#define BYTES_PER_POINT				8
-#define COOR_DATA_CHECKSUM_SIZE		2
-
-#define GOODIX_TOUCH_EVENT			0x80
-#define GOODIX_POWERON_FOD_EVENT			0x88
-#define GOODIX_REQUEST_EVENT		0x40
-#define GOODIX_GESTURE_EVENT		0x20
-#define POINT_TYPE_STYLUS_HOVER		0x01
-#define POINT_TYPE_STYLUS			0x03
-#define GOODIX_LRAGETOUCH_EVENT		0x10
+#define GOODIX_TOUCH_EVENT 0x80
+#define GOODIX_POWERON_FOD_EVENT 0x88
+#define GOODIX_REQUEST_EVENT 0x40
+#define GOODIX_GESTURE_EVENT 0x20
+#define POINT_TYPE_STYLUS_HOVER 0x01
+#define POINT_TYPE_STYLUS 0x03
+#define GOODIX_LRAGETOUCH_EVENT 0x10
 
 static int gesture_event_handler(struct goodix_ts_core *cd,
-			 struct goodix_ts_event *ts_event,
-			 u8 *pre_buf)
+				 struct goodix_ts_event *ts_event, u8 *pre_buf)
 {
 	struct goodix_ts_hw_ops *hw_ops = cd->hw_ops;
 	struct goodix_ic_info_misc *misc = &cd->ic_info.misc;
@@ -61,10 +59,9 @@ static int gesture_event_handler(struct goodix_ts_core *cd,
 	u8 event_status;
 	int ret;
 
-	pre_read_len = IRQ_EVENT_HEAD_LEN +
-		BYTES_PER_POINT * 2 + COOR_DATA_CHECKSUM_SIZE;
-	ret = hw_ops->read(cd, misc->touch_data_addr,
-			   pre_buf, pre_read_len);
+	pre_read_len = IRQ_EVENT_HEAD_LEN + BYTES_PER_POINT * 2 +
+		       COOR_DATA_CHECKSUM_SIZE;
+	ret = hw_ops->read(cd, misc->touch_data_addr, pre_buf, pre_read_len);
 	if (ret) {
 		ts_err("failed get event head data");
 		return ret;
@@ -101,10 +98,10 @@ static int gesture_event_handler(struct goodix_ts_core *cd,
 int gsx_gesture_ist(struct goodix_ts_core *cd)
 {
 	struct goodix_ts_hw_ops *hw_ops = cd->hw_ops;
-	struct goodix_ts_event gs_event = {0};
+	struct goodix_ts_event gs_event = { 0 };
 	int ret;
 	int key_value;
-	unsigned int fodx,fody, fod_id;
+	unsigned int fodx, fody, fod_id;
 	unsigned int overlay_area;
 	u8 gesture_data[32];
 
@@ -119,15 +116,13 @@ int gsx_gesture_ist(struct goodix_ts_core *cd)
 	}
 
 	if (!(gs_event.event_type & EVENT_GESTURE)) {
-		ts_err("invalid event type: 0x%x",
-			cd->ts_event.event_type);
+		ts_err("invalid event type: 0x%x", cd->ts_event.event_type);
 		goto re_send_ges_cmd;
 	}
 
-
 	fod_id = gesture_data[17];
 
-	switch (gs_event.gesture_type){
+	switch (gs_event.gesture_type) {
 #ifdef GOODIX_FOD_AREA_REPORT
 	case GOODIX_GESTURE_FOD_DOWN:
 		if (!(cd->gesture_enabled & FOD_EN)) {
@@ -141,7 +136,7 @@ int gsx_gesture_ist(struct goodix_ts_core *cd)
 
 		fodx = gesture_data[8] | (gesture_data[9] << 8);
 		fody = gesture_data[10] | (gesture_data[11] << 8);
-		overlay_area=gesture_data[12];
+		overlay_area = gesture_data[12];
 
 		input_report_key(cd->input_dev, BTN_INFO, 1);
 		input_sync(cd->input_dev);
@@ -154,8 +149,10 @@ int gsx_gesture_ist(struct goodix_ts_core *cd)
 		input_report_key(cd->input_dev, BTN_TOOL_FINGER, 1);
 		input_report_abs(cd->input_dev, ABS_MT_POSITION_X, fodx);
 		input_report_abs(cd->input_dev, ABS_MT_POSITION_Y, fody);
-		input_report_abs(cd->input_dev, ABS_MT_WIDTH_MAJOR, overlay_area);
-		input_report_abs(cd->input_dev, ABS_MT_WIDTH_MINOR, overlay_area);
+		input_report_abs(cd->input_dev, ABS_MT_WIDTH_MAJOR,
+				 overlay_area);
+		input_report_abs(cd->input_dev, ABS_MT_WIDTH_MINOR,
+				 overlay_area);
 		input_sync(cd->input_dev);
 		if (!cd->fod_finger)
 			ts_info("gesture fod down, id %d", fod_id);
@@ -180,7 +177,7 @@ int gsx_gesture_ist(struct goodix_ts_core *cd)
 			input_sync(cd->input_dev);
 #ifdef TYPE_B_PROTOCOL
 			input_mt_slot(cd->input_dev, fod_id);
-			ts_info("fod id:%d",fod_id);
+			ts_info("fod id:%d", fod_id);
 			input_mt_report_slot_state(cd->input_dev,
 						   MT_TOOL_FINGER, 0);
 #endif
@@ -223,7 +220,6 @@ int gsx_gesture_ist(struct goodix_ts_core *cd)
 		ts_info("unsupported gesture:%x", gs_event.gesture_type);
 		break;
 	}
-
 
 re_send_ges_cmd:
 	if (hw_ops->gesture(cd, cd->gesture_enabled))
@@ -276,7 +272,6 @@ int gesture_module_init(void)
 	ts_info("gesture module init success");
 
 	return 0;
-
 }
 
 void gesture_module_exit(void)
